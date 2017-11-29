@@ -12,6 +12,7 @@ import facenet2 as facenet
 import nn4 as network
 import matplotlib.pyplot as plt
 
+import pickle
 import sklearn
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -234,13 +235,13 @@ def knn_classifier(train_x, train_y):
 
 def svm_classifier(train_x, train_y):
     from sklearn import svm
-    model = svm.SVC(kernel='rbf')
+    model = svm.SVC(kernel='linear', probability=True, verbose=False)
     model.fit(train_x, train_y)
     return model
 
 
-classifiers = knn_classifier
-# classifiers = svm_classifier
+# classifiers = knn_classifier
+classifiers = svm_classifier
 model = classifiers(x_train, y_train)
 predict = model.predict(x_test)
 
@@ -254,5 +255,7 @@ print ('accuracy: %.2f%%' % (100 * accuracy))
 # Save model
 # joblib.dump(model, 'knn_20170511-185253_1.model')
 # joblib.dump(model, 'svm_20170511-185253_1.model')
-joblib.dump(model, 'knn_20170512-110547_2.model')
+# joblib.dump(model, 'knn_20170512-110547_2.model')
 # joblib.dump(model, 'svm_20170512-110547_1.model')
+with open('new.pkl', 'wb') as outfile:
+    pickle.dump((model, keys), outfile)

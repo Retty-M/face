@@ -37,12 +37,12 @@ import tensorflow as tf
 from scipy import misc
 
 import detect_face
-import facenet
+import facenet2 as facenet
 
 
-gpu_memory_fraction = 0.3
+gpu_memory_fraction = 0.5
 facenet_model_checkpoint = "./models/20170512-110547"
-classifier_model = "/../model_checkpoints/my_classifier_1.pkl"
+classifier_model = "hello.pkl"
 debug = False
 
 
@@ -68,7 +68,7 @@ class Recognition:
             face = faces[0]
             face.name = person_name
             face.embedding = self.encoder.generate_embedding(face)
-            return faces
+            return face
 
     def identify(self, image):
         faces = self.detect.find_faces(image)
@@ -129,7 +129,7 @@ class Detection:
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
             sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
             with sess.as_default():
-                return detect_face.create_mtcnn(sess, None)
+                return detect_face.create_mtcnn(sess, "./data")
 
     def find_faces(self, image):
         faces = []
