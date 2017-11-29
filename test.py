@@ -36,4 +36,8 @@ def load_data(data_dir):
 #     print 'sds'
 # print ~hah, hah
 keys = [1, 2, 3, 4]
-print 'No{}:'.format(i for i in range(len(keys)))
+print keys.index(3)
+# print 'No{}:'.format(i for i in range(len(keys)))
+
+name = raw_input('>')
+print name

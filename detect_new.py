@@ -56,6 +56,8 @@ def main(args):
     frame_count = 0
 
     video_capture = cv2.VideoCapture(0)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     face_recognition = face.Recognition()
     start_time = time.time()
 
@@ -80,6 +82,7 @@ def main(args):
         add_overlays(frame, faces, frame_rate)
 
         frame_count += 1
+
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -55,6 +55,16 @@ class Face:
         self.embedding = None
 
 
+class Capture:
+    def __init__(self):
+        self.detect = Detection()
+
+    def capture(self, image):
+        faces = self.detect.find_faces(image)
+        if len(faces) == 1:
+            return faces[0]
+
+
 class Recognition:
     def __init__(self):
         self.detect = Detection()
@@ -63,7 +73,6 @@ class Recognition:
 
     def add_identity(self, image, person_name):
         faces = self.detect.find_faces(image)
-
         if len(faces) == 1:
             face = faces[0]
             face.name = person_name
