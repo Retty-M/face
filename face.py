@@ -42,7 +42,7 @@ import facenet
 
 gpu_memory_fraction = 0.5
 facenet_model_checkpoint = "./models/20170512-110547"
-classifier_model = "hello.pkl"
+classifier_model = "1207.pkl"
 debug = False
 
 

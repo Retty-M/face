@@ -60,7 +60,7 @@ def main(args):
     train_y = np.array(train_y)
     print(train_x.shape)
     print(train_y.shape)
-    train_classifier(train_x, train_y, keys, 'hello.pkl')
+    train_classifier(train_x, train_y, keys, '1207.pkl')
 
 
 def load_data(data_dir):
