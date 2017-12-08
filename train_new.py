@@ -33,6 +33,8 @@ import face as Face
 
 from os.path import join as pjoin
 from sklearn.svm import SVC
+from sklearn.svm import OneClassSVM
+from sklearn.externals import joblib
 
 
 def main(args):
@@ -45,8 +47,9 @@ def main(args):
         print("Debug enabled")
         Face.debug = True
 
-    for index in range(len(keys)):
-        name = keys[index]
+    temp = 0
+    for index, name in enumerate(keys):
+        # name = keys[index]
         for img in data[name]:
             face = face_recognition.add_identity(img, person_name=name)
             if face is not None:
@@ -56,11 +59,14 @@ def main(args):
                 train_y.append(keys.index(face.name))
                 # train_x = np.concatenate([train_x, face.embedding]) if train_x is not None else face.embedding
                 # train_y = np.concatenate([train_y, face.name]) if train_y is not None else face.name
+        print('INFO: {} has {} images available'.format(name, len(train_x) - temp))
+        temp = len(train_x)
     train_x = np.array(train_x).reshape(-1, 128)
     train_y = np.array(train_y)
-    print(train_x.shape)
-    print(train_y.shape)
-    train_classifier(train_x, train_y, keys, '1207.pkl')
+    # print(train_x.shape)
+    # print(train_y.shape)
+    train_boundary(train_x, 'boundary.model')
+    train_classifier(train_x, train_y, keys, '1208.pkl')
 
 
 def load_data(data_dir):
@@ -75,12 +81,21 @@ def load_data(data_dir):
             img = cv2.imread(img_dir)
             curr_pics.append(img)
         data[guy] = curr_pics
-        print('INFO: {} image numbers is {}'.format(guy, len(curr_pics)))
+        print('INFO: {} images number is {}'.format(guy, len(curr_pics)))
     return data, keys
 
 
+def train_boundary(emb_array, boundary_filename):
+    print '------- Training Boundary -------'
+    model = OneClassSVM(nu=0.1)
+    model.fit(emb_array)
+
+    joblib.dump(model, boundary_filename)
+    print 'Saved classifier model to file "%s"' % boundary_filename
+
+
 def train_classifier(emb_array, label_array, class_names, classifier_filename):
-    print 'Training Classifier'
+    print '------- Training Classifier -------'
     model = SVC(kernel='linear', probability=True, verbose=False)
     model.fit(emb_array, label_array)
 

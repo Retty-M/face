@@ -39,10 +39,13 @@ from scipy import misc
 import detect_face
 import facenet
 
+from sklearn.externals import joblib
+
 
 gpu_memory_fraction = 0.5
-facenet_model_checkpoint = "./models/20170512-110547"
-classifier_model = "1207.pkl"
+facenet_model_checkpoint = "./models/20170511-185253"
+boundary_model = "boundary.model"
+classifier_model = "1208.pkl"
 debug = False
 
 
@@ -65,6 +68,16 @@ class Capture:
             return faces[0]
 
 
+class Boundary:
+    def __init__(self):
+        self.model = joblib.load(boundary_model)
+
+    def detect(self, face):
+        if face.embedding is not None:
+            result = self.model.predict([face.embedding])
+            return result[0]
+
+
 class Recognition:
     def __init__(self):
         self.detect = Detection()
@@ -80,15 +93,20 @@ class Recognition:
             return face
 
     def identify(self, image):
+        boundary = Boundary()
+        available_faces = []
         faces = self.detect.find_faces(image)
 
         for i, face in enumerate(faces):
             if debug:
                 cv2.imshow("Face: " + str(i), face.image)
             face.embedding = self.encoder.generate_embedding(face)
-            face.name = self.identifier.identify(face)
+            result = boundary.detect(face)
+            if result > 0:
+                available_faces.append(face)
+                face.name = self.identifier.identify(face)
 
-        return faces
+        return available_faces
 
 
 class Identifier:
