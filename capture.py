@@ -24,7 +24,7 @@ def main():
     name = raw_input('Enter Your Name: ')
     os.system('mkdir ./train_data/%s' % name)
 
-    video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture(1)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     face_capture = Face.Capture()

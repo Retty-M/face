@@ -40,7 +40,7 @@ def add_overlays(frame, faces, frame_rate):
                           (face_bb[0], face_bb[1]), (face_bb[2], face_bb[3]),
                           (0, 255, 0), 2)
             if face.name is not None:
-                cv2.putText(frame, face.name, (face_bb[0], face_bb[3]),
+                cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
                             thickness=2, lineType=2)
 

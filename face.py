@@ -52,6 +52,7 @@ debug = False
 class Face:
     def __init__(self):
         self.name = None
+        self.score = None
         self.bounding_box = None
         self.image = None
         self.container_image = None
@@ -104,7 +105,7 @@ class Recognition:
             result = boundary.detect(face)
             if result > 0:
                 available_faces.append(face)
-                face.name = self.identifier.identify(face)
+                face.name, face.score = self.identifier.identify(face)
 
         return available_faces
 
@@ -118,7 +119,7 @@ class Identifier:
         if face.embedding is not None:
             predictions = self.model.predict_proba([face.embedding])
             best_class_indices = np.argmax(predictions, axis=1)
-            return self.class_names[best_class_indices[0]]
+            return self.class_names[best_class_indices[0]], predictions[0][best_class_indices[0]]
 
 
 class Encoder:
