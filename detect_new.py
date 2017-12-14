@@ -28,25 +28,38 @@ import sys
 import time
 
 import cv2
-
 import face
+
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 
 def add_overlays(frame, faces, frame_rate):
+    cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    pil_frame = Image.fromarray(cv2_frame)
     if faces is not None:
         for face in faces:
             face_bb = face.bounding_box.astype(int)
-            cv2.rectangle(frame,
-                          (face_bb[0], face_bb[1]), (face_bb[2], face_bb[3]),
-                          (0, 255, 0), 2)
-            if face.name is not None:
-                cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
-                            thickness=2, lineType=2)
 
-    cv2.putText(frame, str(frame_rate) + " fps", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
-                thickness=2, lineType=2)
+            draw = ImageDraw.Draw(pil_frame)
+            draw.rectangle((face_bb[0], face_bb[1], face_bb[2], face_bb[3]), outline=(0, 255, 0))
+
+            # cv2.rectangle(frame,
+            #               (face_bb[0], face_bb[1]), (face_bb[2], face_bb[3]),
+            #               (0, 255, 0), 2)
+            if face.name is not None:
+                font = ImageFont.truetype('simhei', 20, encoding='utf-8')
+                draw.text((face_bb[0], face_bb[3]),
+                          u'%s %d%%' % (unicode(face.name, 'utf-8'), face.score*100),
+                          (0, 255, 0), font=font)
+                # cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
+                #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
+                #             thickness=2, lineType=2)
+    return cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
+
+    # cv2.putText(frame, str(frame_rate) + " fps", (10, 30),
+    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
+    #             thickness=2, lineType=2)
 
 
 def main(args):
@@ -79,7 +92,7 @@ def main(args):
                 start_time = time.time()
                 frame_count = 0
 
-        add_overlays(frame, faces, frame_rate)
+        frame = add_overlays(frame, faces, frame_rate)
 
         frame_count += 1
         # cv2.namedWindow('Video', cv2.WINDOW_NORMAL)

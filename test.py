@@ -62,27 +62,56 @@ import pyttsx
 
 # os.system('espeak -v zh+f2 -b 1 腾讯')
 
-# import cv2
-# import numpy as np
-# from PIL import Image, ImageDraw, ImageFont
-#
-# cap = cv2.VideoCapture(0)
-# while True:
-#
-#     ret, im = cap.read()
-#     cv2_im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-#     pil_im = Image.fromarray(cv2_im)
-#
-#     draw = ImageDraw.Draw(pil_im)
-#     font = ImageFont.truetype('simhei', 20, encoding='utf-8')
-#     draw.text((0, 0), u"eg：打印在这里", (0, 0, 255), font=font)
-#
-#     cv2_text_im = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)
-#     cv2.imshow("Video", cv2_text_im)
-#     if cv2.waitKey(1) & 0xFF == ord('q'):
-#         break
-#
-# cap.release()
-# cv2.destroyAllWindows()
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
-print('%d%%' % 5)
+cap = cv2.VideoCapture(0)
+while True:
+
+    ret, im = cap.read()
+    cv2_im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    pil_im = Image.fromarray(cv2_im)
+
+    draw = ImageDraw.Draw(pil_im)
+    font = ImageFont.truetype('simhei', 20, encoding='utf-8')
+    draw.rectangle((100, 100, 300, 300), outline=(0, 255, 0))
+    draw.text((90, 90), u"{}%".format(unicode('收到', 'utf-8')), (0, 0, 255), font=font)
+
+    cv2_text_im = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)
+    cv2.imshow("Video", cv2_text_im)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
+# import pyaudio
+# import wave
+#
+# # define stream chunk
+# chunk = 1024
+#
+# # open a wav format music
+# f = wave.open('./audio/wym.wav', 'rb')
+# # instantiate PyAudio
+# p = pyaudio.PyAudio()
+# # open stream
+# stream = p.open(format=p.get_format_from_width(f.getsampwidth()),
+#                 channels=f.getnchannels(),
+#                 rate=f.getframerate(),
+#                 output=True)
+# # read data
+# data = f.readframes(chunk)
+#
+# # paly stream
+# while data != '':
+#     stream.write(data)
+#     data = f.readframes(chunk)
+#
+# # stop stream
+# stream.stop_stream()
+# stream.close()
+#
+# # close PyAudio
+# p.terminate()
