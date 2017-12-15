@@ -102,10 +102,12 @@ class Recognition:
             if debug:
                 cv2.imshow("Face: " + str(i), face.image)
             face.embedding = self.encoder.generate_embedding(face)
-            result = boundary.detect(face)
-            if result > 0:
+            # result = boundary.detect(face)
+            # if result > 0:
+            # available_faces.append(face)
+            face.name, face.score = self.identifier.identify(face)
+            if face.score >= 0.8:
                 available_faces.append(face)
-                face.name, face.score = self.identifier.identify(face)
 
         return available_faces
 

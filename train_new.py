@@ -87,7 +87,7 @@ def load_data(data_dir):
 
 def train_boundary(emb_array, boundary_filename):
     print '------- Training Boundary -------'
-    model = OneClassSVM(nu=0.05, gamma=0.1)
+    model = OneClassSVM(nu=0.005, gamma=0.5)
     model.fit(emb_array)
 
     joblib.dump(model, boundary_filename)

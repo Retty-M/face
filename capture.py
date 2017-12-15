@@ -32,19 +32,17 @@ def main():
     while True:
         # Capture frame-by-frame
         ret, frame = video_capture.read()
-
-        if (frame_count % frame_interval) == 0:
-            face = face_capture.capture(frame)
-            if face is not None:
-                image_count += 1
-                cv2.imwrite('./train_data/%s/%s_%d.jpg' % (name, name, image_count), frame)
+        if frame_count > 50:
+            if (frame_count % frame_interval) == 0:
+                face = face_capture.capture(frame)
+                if face is not None:
+                    image_count += 1
+                    cv2.imwrite('./train_data/%s/%s_%d.jpg' % (name, name, image_count), frame)
         add_overlays(frame, face, image_count*2)
 
         frame_count += 1
         cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
         cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        # cv2.resizeWindow('Video', 1280, 720)
-        # cv2.moveWindow('Video', 50, 50)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
