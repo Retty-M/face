@@ -44,7 +44,7 @@ import cv2
 # print name
 
 import os
-import pyttsx
+# import pyttsx
 
 # reload(sys)
 # sys.setdefaultencoding('utf-8')

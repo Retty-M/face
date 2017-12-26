@@ -24,13 +24,14 @@ def main():
     name = raw_input('Enter Your Name: ')
     os.system('mkdir ./train_data/%s' % name)
 
-    video_capture = cv2.VideoCapture(1)
+    video_capture = cv2.VideoCapture(0)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     face_capture = Face.Capture()
 
     while True:
         # Capture frame-by-frame
+        face = None
         ret, frame = video_capture.read()
         if frame_count > 50:
             if (frame_count % frame_interval) == 0:

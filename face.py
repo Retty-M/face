@@ -114,10 +114,11 @@ class Recognition:
 
 class Identifier:
     def __init__(self):
-        with open(classifier_model, 'rb') as infile:
-            self.model, self.class_names = pickle.load(infile)
+        pass
 
     def identify(self, face):
+        with open(classifier_model, 'rb') as infile:
+            self.model, self.class_names = pickle.load(infile)
         if face.embedding is not None:
             predictions = self.model.predict_proba([face.embedding])
             best_class_indices = np.argmax(predictions, axis=1)
@@ -158,6 +159,7 @@ class Detection:
         with tf.Graph().as_default():
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
             sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+            # sess = tf.Session(config=tf.ConfigProto(log_device_placement=False))
             with sess.as_default():
                 return detect_face.create_mtcnn(sess, "./data")
 

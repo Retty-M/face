@@ -29,6 +29,7 @@ import time
 
 import cv2
 import face
+import object
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -72,6 +73,7 @@ def main(args):
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     face_recognition = face.Recognition()
+    object_detection = object.Detection()
     start_time = time.time()
 
     if args.debug:
@@ -83,6 +85,7 @@ def main(args):
         ret, frame = video_capture.read()
 
         if (frame_count % frame_interval) == 0:
+            object_detection.find_objects(frame)
             faces = face_recognition.identify(frame)
 
             # Check our current fps
