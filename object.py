@@ -29,40 +29,41 @@ class Detection:
                                                                     use_display_name=True)
         self.category_index = label_map_util.create_category_index(categories)
 
-        self.detection_graph = tf.Graph()
-        with self.detection_graph.as_default():
+        detection_graph = tf.Graph()
+        with detection_graph.as_default():
             od_graph_def = tf.GraphDef()
             with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-
-    def find_objects(self, image):
-        with self.detection_graph.as_default():
-            with tf.Session(graph = self.detection_graph) as sess:
+            with tf.Session(graph=detection_graph) as self.sess:
                 # Definite input and output Tensors for detection_graph
-                image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+                self.image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
                 # Each box represents a part of the image where a particular object was detected.
-                detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+                self.detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
                 # Each score represent how level of confidence for each of the objects.
                 # Score is shown on the result image, together with the class label.
-                detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
-                detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-                num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
+                self.detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
+                self.detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
+                self.num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-                # image_np = load_image_into_numpy_array(frame)
-                image_np_expanded = np.expand_dims(image, axis=0)
+    def find_objects(self, image):
+        # with self.detection_graph.as_default():
+        #     with tf.Session(graph = self.detection_graph) as sess:
 
-                # Actual detection.
-                (boxes, scores, classes, num) = sess.run(
-                    [detection_boxes, detection_scores, detection_classes, num_detections],
-                    feed_dict={image_tensor: image_np_expanded})
-                # Visualization of the results of a detection.
-                vis_util.visualize_boxes_and_labels_on_image_array(
-                    image,
-                    np.squeeze(boxes),
-                    np.squeeze(classes).astype(np.int32),
-                    np.squeeze(scores),
-                    self.category_index,
-                    use_normalized_coordinates=True,
-                )
+        # image_np = load_image_into_numpy_array(frame)
+        image_np_expanded = np.expand_dims(image, axis=0)
+
+        # Actual detection.
+        (boxes, scores, classes, num) = self.sess.run(
+            [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
+            feed_dict={self.image_tensor: image_np_expanded})
+        # Visualization of the results of a detection.
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image,
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            self.category_index,
+            use_normalized_coordinates=True,
+        )
