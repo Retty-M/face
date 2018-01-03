@@ -1,0 +1,5 @@
+numpy
+tensorflow-gpu
+scipy
+scikit-learn
+opencv-python==3.4.0.12
