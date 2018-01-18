@@ -6,7 +6,7 @@
 
 2.Run mkdir a new document 'train_data' in ./
 
-3.Find your video device number ed:/dev/video0 and change code like this
+3.Find your video device number eg:/dev/video0 and change code like this
 >cv2.VideoCapture(0)
 
 4.Run capture,py first to capture images
