@@ -463,9 +463,11 @@ def visualize_boxes_and_labels_on_image_array(image,
         else:
           box_to_color_map[box] = STANDARD_COLORS[
               classes[i] % len(STANDARD_COLORS)]
+  print(box_to_color_map)
 
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
+    print len(box_to_color_map)
     ymin, xmin, ymax, xmax = box
     if instance_masks is not None:
       draw_mask_on_image_array(
@@ -492,6 +494,58 @@ def visualize_boxes_and_labels_on_image_array(image,
           use_normalized_coordinates=use_normalized_coordinates)
 
   return image
+
+
+def find_person_custom(boxes, classes, scores, max_boxes_to_draw=20, min_score_thresh=.5):
+
+    """Overlay labeled boxes on an image with formatted scores and label names.
+
+    This function groups boxes that correspond to the same location
+    and creates a display string for each detection and overlays these
+    on the image. Note that this function modifies the image in place, and returns
+    that same image.
+
+    Args:
+    image: uint8 numpy array with shape (img_height, img_width, 3)
+    boxes: a numpy array of shape [N, 4]
+    classes: a numpy array of shape [N]. Note that class indices are 1-based,
+      and match the keys in the label map.
+    scores: a numpy array of shape [N] or None.  If scores=None, then
+      this function assumes that the boxes to be plotted are groundtruth
+      boxes and plot all boxes as black with no classes or scores.
+    category_index: a dict containing category dictionaries (each holding
+      category index `id` and category name `name`) keyed by category indices.
+    instance_masks: a numpy array of shape [N, image_height, image_width], can
+      be None
+    keypoints: a numpy array of shape [N, num_keypoints, 2], can
+      be None
+    use_normalized_coordinates: whether boxes is to be interpreted as
+      normalized coordinates or not.
+    max_boxes_to_draw: maximum number of boxes to visualize.  If None, draw
+      all boxes.
+    min_score_thresh: minimum score threshold for a box to be visualized
+    agnostic_mode: boolean (default: False) controlling whether to evaluate in
+      class-agnostic mode or not.  This mode will display scores but ignore
+      classes.
+    line_thickness: integer (default: 4) controlling line width of the boxes.
+
+    Returns:
+    uint8 numpy array with shape (img_height, img_width, 3) with overlaid boxes.
+    """
+
+    # Create a display string (and color) for every box location, group any boxes
+    # that correspond to the same location.
+    box_to_color_map = collections.defaultdict(str)
+
+    if not max_boxes_to_draw:
+        max_boxes_to_draw = boxes.shape[0]
+    for i in range(min(max_boxes_to_draw, boxes.shape[0])):
+        if scores[i] > min_score_thresh:
+            box = tuple(boxes[i].tolist())
+            if classes[i] == 1:
+                box_to_color_map[box] = STANDARD_COLORS[classes[i] % len(STANDARD_COLORS)]
+
+    return box_to_color_map
 
 
 def add_cdf_image_summary(values, name):

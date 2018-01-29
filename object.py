@@ -58,12 +58,18 @@ class Detection:
         (boxes, scores, classes, num) = self.sess.run(
             [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_np_expanded})
+        # print np.squeeze(scores)
         # Visualization of the results of a detection.
-        vis_util.visualize_boxes_and_labels_on_image_array(
-            image,
+        # vis_util.visualize_boxes_and_labels_on_image_array(
+        #     image,
+        #     np.squeeze(boxes),
+        #     np.squeeze(classes).astype(np.int32),
+        #     np.squeeze(scores),
+        #     self.category_index,
+        #     use_normalized_coordinates=True,
+        # )
+        print vis_util.find_person_custom(
             np.squeeze(boxes),
             np.squeeze(classes).astype(np.int32),
-            np.squeeze(scores),
-            self.category_index,
-            use_normalized_coordinates=True,
+            np.squeeze(scores)
         )
