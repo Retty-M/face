@@ -84,10 +84,11 @@ def main(args):
         # Capture frame-by-frame
         ret, frame = video_capture.read()
 
-        object_detection.find_objects(frame)
+        # object_detection.find_objects(frame)
+        object_detection.track_person(frame)
         if (frame_count % frame_interval) == 0:
             # object_detection.find_objects(frame)
-            faces = face_recognition.identify(frame)
+            # faces = face_recognition.identify(frame)
 
             # Check our current fps
             end_time = time.time()
@@ -96,7 +97,7 @@ def main(args):
                 start_time = time.time()
                 frame_count = 0
 
-        frame = add_overlays(frame, faces, frame_rate)
+        # frame = add_overlays(frame, faces, frame_rate)
 
         frame_count += 1
         cv2.namedWindow('Video', cv2.WINDOW_NORMAL)

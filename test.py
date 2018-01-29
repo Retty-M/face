@@ -227,6 +227,8 @@ import os
 #
 #   return image
 
+import numpy as np
 a = (0.35919106006622314, 0.2792535126209259, 0.9985294342041016, 0.6948285102844238)
-a = [i*100 for i in a]
-print a
+# a = list([i*100 for i in a])
+b = np.array(a)
+print a, b

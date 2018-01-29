@@ -1,3 +1,6 @@
+numba
+dlib
+filterpy
 tensorflow
 numpy
 tensorflow-gpu

@@ -463,7 +463,6 @@ def visualize_boxes_and_labels_on_image_array(image,
         else:
           box_to_color_map[box] = STANDARD_COLORS[
               classes[i] % len(STANDARD_COLORS)]
-  print(box_to_color_map)
 
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
@@ -550,7 +549,7 @@ def find_person_custom(image, boxes, classes, scores, max_boxes_to_draw=20, min_
         ymin, xmin, ymax, xmax = box
         location.append([xmin * im_width, ymin * im_height, xmax * im_width, ymax * im_height])
 
-    return location
+    return np.array(location)
 
 
 def add_cdf_image_summary(values, name):
