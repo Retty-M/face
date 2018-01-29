@@ -1,9 +1,9 @@
 # coding: utf-8
 
 import os
-import cv2
 import numpy as np
 import tensorflow as tf
+from sort import Sort
 
 from utils import label_map_util
 from utils import visualization_utils as vis_util
@@ -21,9 +21,12 @@ PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
 
 NUM_CLASSES = 90
 
+
 class Detection:
 
     def __init__(self):
+        self.tracker = Sort()
+
         label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
                                                                     use_display_name=True)
@@ -58,18 +61,36 @@ class Detection:
         (boxes, scores, classes, num) = self.sess.run(
             [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_np_expanded})
-        # print np.squeeze(scores)
+
         # Visualization of the results of a detection.
-        # vis_util.visualize_boxes_and_labels_on_image_array(
-        #     image,
-        #     np.squeeze(boxes),
-        #     np.squeeze(classes).astype(np.int32),
-        #     np.squeeze(scores),
-        #     self.category_index,
-        #     use_normalized_coordinates=True,
-        # )
-        print vis_util.find_person_custom(
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image,
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            self.category_index,
+            use_normalized_coordinates=True,
+        )
+
+    def track_person(self, image):
+        image_np_expanded = np.expand_dims(image, axis=0)
+
+        # Actual detection.
+        (boxes, scores, classes, num) = self.sess.run(
+            [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
+            feed_dict={self.image_tensor: image_np_expanded})
+
+        locations = vis_util.find_person_custom(
+            image,
             np.squeeze(boxes),
             np.squeeze(classes).astype(np.int32),
             np.squeeze(scores)
         )
+
+        trackers = self.tracker.update(locations, image)
+        for d in trackers:
+            d = d.astype(np.int32)
+            color = vis_util.STANDARD_COLORS[d[4] % len(vis_util.STANDARD_COLORS)]
+            vis_util.draw_bounding_box_on_image_array(image, d[1], d[0], d[3], d[2],
+                                                      color=color,
+                                                      use_normalized_coordinates=False)

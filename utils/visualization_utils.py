@@ -467,7 +467,6 @@ def visualize_boxes_and_labels_on_image_array(image,
 
   # Draw all boxes onto image.
   for box, color in box_to_color_map.items():
-    print len(box_to_color_map)
     ymin, xmin, ymax, xmax = box
     if instance_masks is not None:
       draw_mask_on_image_array(
@@ -496,7 +495,7 @@ def visualize_boxes_and_labels_on_image_array(image,
   return image
 
 
-def find_person_custom(boxes, classes, scores, max_boxes_to_draw=20, min_score_thresh=.5):
+def find_person_custom(image, boxes, classes, scores, max_boxes_to_draw=20, min_score_thresh=.5):
 
     """Overlay labeled boxes on an image with formatted scores and label names.
 
@@ -535,6 +534,7 @@ def find_person_custom(boxes, classes, scores, max_boxes_to_draw=20, min_score_t
 
     # Create a display string (and color) for every box location, group any boxes
     # that correspond to the same location.
+    im_width, im_height = Image.fromarray(np.uint8(image)).convert('RGB').size
     box_to_color_map = collections.defaultdict(str)
 
     if not max_boxes_to_draw:
@@ -545,7 +545,12 @@ def find_person_custom(boxes, classes, scores, max_boxes_to_draw=20, min_score_t
             if classes[i] == 1:
                 box_to_color_map[box] = STANDARD_COLORS[classes[i] % len(STANDARD_COLORS)]
 
-    return box_to_color_map
+    location = []
+    for box in box_to_color_map.keys():
+        ymin, xmin, ymax, xmax = box
+        location.append([xmin * im_width, ymin * im_height, xmax * im_width, ymax * im_height])
+
+    return location
 
 
 def add_cdf_image_summary(values, name):
