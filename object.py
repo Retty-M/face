@@ -13,9 +13,9 @@ from utils import visualization_utils as vis_util
 
 # ssd_mobilenet_v1_coco_2017_11_17
 # faster_rcnn_resnet50_coco
-# faster_rcnn_resnet50_coco
+# faster_rcnn_inception_v2_coco
 
-MODEL_NAME = 'faster_rcnn_resnet50_coco'
+MODEL_NAME = 'faster_rcnn_inception_v2_coco'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
