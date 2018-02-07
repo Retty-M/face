@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import os
+import face
 import numpy as np
 import tensorflow as tf
 from sort import Sort
@@ -30,6 +31,7 @@ NUM_CLASSES = 90
 class Detection:
 
     def __init__(self):
+        self.face_recognition = face.Recognition()
         self.tracker = Sort()
 
         label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -91,6 +93,9 @@ class Detection:
             np.squeeze(classes).astype(np.int32),
             np.squeeze(scores)
         )
+
+        # if locations is not None:
+        #     faces = self.face_recognition.identify(image)
 
         trackers = self.tracker.update(locations, image)
         for d in trackers:
