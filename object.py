@@ -34,7 +34,6 @@ class Detection:
     def __init__(self):
         self.persons = collections.defaultdict(str)
         self.tracker = Sort()
-        self.face_recognition = face.Recognition()
 
         label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
@@ -81,7 +80,7 @@ class Detection:
             use_normalized_coordinates=True,
         )
 
-    def track_person(self, image):
+    def track_person(self, image, face_recognition):
         image_np_expanded = np.expand_dims(image, axis=0)
 
         # Actual detection.
@@ -103,7 +102,7 @@ class Detection:
             if d[4] in self.persons:
                 persons_temp[d[4]] = self.persons[d[4]]
                 if self.persons[str(d[4])] != '1111':
-                    faces = self.face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
+                    faces = face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
                     if faces is not None:
                         for face in faces:
                             if persons_temp[d[4]] == face.name:
@@ -112,7 +111,7 @@ class Detection:
                 persons_temp[d[4]] = '未知'
                 persons_temp[str(d[4])] = '1'
             if persons_temp[d[4]] == '未知':
-                faces = self.face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
+                faces = face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
                 if faces is not None:
                     for face in faces:
                         persons_temp[str(d[4])] += '1'

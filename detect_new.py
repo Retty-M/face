@@ -74,7 +74,7 @@ def main(args):
     video_capture = cv2.VideoCapture(0)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    if args.face:
+    if args.face or args.track:
         face_recognition = face.Recognition()
     if args.object or args.track:
         object_detection = object.Detection()
@@ -92,7 +92,7 @@ def main(args):
         if args.object:
             object_detection.find_objects(frame)
         if args.track:
-            object_detection.track_person(frame)
+            object_detection.track_person(frame, face_recognition)
         if (frame_count % frame_interval) == 0:
             if args.face:
                 faces = face_recognition.identify(frame)
