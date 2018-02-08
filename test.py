@@ -228,7 +228,28 @@ import os
 #   return image
 
 import numpy as np
-a = (0.35919106006622314, 0.2792535126209259, 0.9985294342041016, 0.6948285102844238)
-# a = list([i*100 for i in a])
-b = np.array(a)
-print a, b
+# a = (0.35919106006622314, 0.2792535126209259, 0.9985294342041016, 0.6948285102844238)
+# # a = list([i*100 for i in a])
+# b = np.array(a)
+# print a, b
+
+# import numpy
+#
+# c = []
+# a = numpy.load('./train_data/王艺谋/encoder.npy')
+# print(a is None)
+# print(len(c))
+# if c:
+#     print('xx')
+# b = []
+# c = a
+# print(a.shape)
+# for _ in range(0, a.shape[0]):
+#     b.append(2)
+# b = np.array(b)
+# print(b)
+# print(c.shape)
+# print(b.shape)
+
+import collections
+

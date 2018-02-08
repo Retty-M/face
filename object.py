@@ -1,6 +1,8 @@
 # coding: utf-8
 
 import os
+import face
+import collections
 import numpy as np
 import tensorflow as tf
 from sort import Sort
@@ -10,11 +12,11 @@ from utils import visualization_utils as vis_util
 
 # What model to download.
 
-# ssd_mobilenet_v1_coco_2017_11_17
+# ssd_mobilenet_v1_coco
 # faster_rcnn_resnet50_coco
 # faster_rcnn_inception_v2_coco
 
-MODEL_NAME = 'faster_rcnn_inception_v2_coco'
+MODEL_NAME = 'ssd_mobilenet_v1_coco'
 MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
@@ -30,7 +32,9 @@ NUM_CLASSES = 90
 class Detection:
 
     def __init__(self):
+        self.persons = collections.defaultdict(str)
         self.tracker = Sort()
+        self.face_recognition = face.Recognition()
 
         label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
@@ -93,9 +97,30 @@ class Detection:
         )
 
         trackers = self.tracker.update(locations, image)
+        persons_temp = collections.defaultdict(str)
         for d in trackers:
             d = d.astype(np.int32)
+            if d[4] in self.persons:
+                persons_temp[d[4]] = self.persons[d[4]]
+                if self.persons[str(d[4])] != '1111':
+                    faces = self.face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
+                    if faces is not None:
+                        for face in faces:
+                            if persons_temp[d[4]] == face.name:
+                                persons_temp[str(d[4])] += '1'
+            else:
+                persons_temp[d[4]] = '未知'
+                persons_temp[str(d[4])] = '1'
+            if persons_temp[d[4]] == '未知':
+                faces = self.face_recognition.identify(image[d[1]:d[3], d[0]:d[2]])
+                if faces is not None:
+                    for face in faces:
+                        persons_temp[str(d[4])] += '1'
+                        persons_temp[d[4]] = face.name
             color = vis_util.STANDARD_COLORS[d[4] % len(vis_util.STANDARD_COLORS)]
-            vis_util.draw_bounding_box_on_image_array(image, d[1], d[0], d[3], d[2],
-                                                      color=color,
-                                                      use_normalized_coordinates=False)
+            vis_util.draw_bounding_box_on_image_array_custom(image, d[1], d[0], d[3], d[2],
+                                                             color=color,
+                                                             display_str_list=unicode(persons_temp[d[4]], 'utf-8'),
+                                                             use_normalized_coordinates=False)
+        self.persons = persons_temp
+

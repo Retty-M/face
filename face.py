@@ -45,7 +45,7 @@ from sklearn.externals import joblib
 gpu_memory_fraction = 0.5
 facenet_model_checkpoint = "./models/20170511-185253"
 boundary_model = "boundary.model"
-classifier_model = "1208.pkl"
+classifier_model = "0208.pkl"
 debug = False
 
 
@@ -62,11 +62,19 @@ class Face:
 class Capture:
     def __init__(self):
         self.detect = Detection()
+        self.encoder = Encoder()
 
     def capture(self, image):
         faces = self.detect.find_faces(image)
         if len(faces) == 1:
             return faces[0]
+
+    def capture_encode(self, image):
+        faces = self.detect.find_faces(image)
+        if len(faces) == 1:
+            face = faces[0]
+            face.embedding = self.encoder.generate_embedding(face)
+            return face
 
 
 class Boundary:

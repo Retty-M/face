@@ -36,9 +36,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def add_overlays(frame, faces, frame_rate):
-    cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    pil_frame = Image.fromarray(cv2_frame)
     if faces is not None:
+
+        cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_frame = Image.fromarray(cv2_frame)
+
         for face in faces:
             face_bb = face.bounding_box.astype(int)
 
@@ -56,7 +58,7 @@ def add_overlays(frame, faces, frame_rate):
                 # cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
                 #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
                 #             thickness=2, lineType=2)
-    return cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
+        return cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
 
     # cv2.putText(frame, str(frame_rate) + " fps", (10, 30),
     #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
@@ -72,8 +74,10 @@ def main(args):
     video_capture = cv2.VideoCapture(0)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    face_recognition = face.Recognition()
-    object_detection = object.Detection()
+    if args.face:
+        face_recognition = face.Recognition()
+    if args.object or args.track:
+        object_detection = object.Detection()
     start_time = time.time()
 
     if args.debug:
@@ -82,24 +86,29 @@ def main(args):
 
     while True:
         # Capture frame-by-frame
+        faces = None
         ret, frame = video_capture.read()
 
-        # object_detection.find_objects(frame)
-        object_detection.track_person(frame)
+        if args.object:
+            object_detection.find_objects(frame)
+        if args.track:
+            object_detection.track_person(frame)
         if (frame_count % frame_interval) == 0:
-            # object_detection.find_objects(frame)
-            # faces = face_recognition.identify(frame)
+            if args.face:
+                faces = face_recognition.identify(frame)
 
             # Check our current fps
-            end_time = time.time()
-            if (end_time - start_time) > fps_display_interval:
-                frame_rate = int(frame_count / (end_time - start_time))
-                start_time = time.time()
-                frame_count = 0
+            # end_time = time.time()
+            # if (end_time - start_time) > fps_display_interval:
+            #     frame_rate = int(frame_count / (end_time - start_time))
+            #     start_time = time.time()
+            #     frame_count = 0
 
-        # frame = add_overlays(frame, faces, frame_rate)
+        frame_tmp = add_overlays(frame, faces, frame_rate)
+        if frame_tmp is not None:
+            frame = frame_tmp
 
-        frame_count += 1
+        # frame_count += 1
         cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
         cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Video', frame)
@@ -117,6 +126,12 @@ def parse_arguments(argv):
 
     parser.add_argument('--debug', action='store_true',
                         help='Enable some debug outputs.')
+    parser.add_argument('--object', action='store_true',
+                        help='Enable detect objects.')
+    parser.add_argument('--face', action='store_true',
+                        help='Enable detect faces.')
+    parser.add_argument('--track', action='store_true',
+                        help='Enable visual tracker.')
     return parser.parse_args(argv)
 
 

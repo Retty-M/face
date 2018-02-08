@@ -63,14 +63,14 @@ def main(args):
         temp = len(train_x)
     train_x = np.array(train_x).reshape(-1, 128)
     train_y = np.array(train_y)
-    # print(train_x.shape)
-    # print(train_y.shape)
+    print(train_x.shape)
+    print(train_y.shape)
     train_boundary(train_x, 'boundary.model')
     train_classifier(train_x, train_y, keys, '1208.pkl')
 
 
 def load_data(data_dir):
-    keys = []
+    keys = np.ndarray()
     data = {}
     for guy in os.listdir(data_dir):
         curr_pics = []
