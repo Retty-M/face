@@ -227,7 +227,7 @@ import os
 #
 #   return image
 
-import numpy as np
+# import numpy as np
 # a = (0.35919106006622314, 0.2792535126209259, 0.9985294342041016, 0.6948285102844238)
 # # a = list([i*100 for i in a])
 # b = np.array(a)
@@ -251,5 +251,26 @@ import numpy as np
 # print(c.shape)
 # print(b.shape)
 
-import collections
+# import collections
 
+import cv2
+
+# cap = cv2.VideoCapture('/home/id/LG.OLED.4K.DEMO_NASA.Two/LG.OLED.4K.DEMO_NASA.Two.ts')
+# cap = cv2.VideoCapture('rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov')
+cap = cv2.VideoCapture('rtsp://192.168.1.110:8554/test')
+print cap.isOpened()
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+while True:
+
+    ret, im = cap.read()
+
+    cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv2.imshow("Video", im)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

@@ -71,7 +71,9 @@ def main(args):
     frame_rate = 0
     frame_count = 0
 
-    video_capture = cv2.VideoCapture(0)
+    # video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture('rtsp://192.168.1.110:8554/test')
+
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     if args.face or args.track:
