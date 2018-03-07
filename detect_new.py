@@ -23,9 +23,11 @@ Based on code from https://github.com/shanren7/real_time_face_recognition
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import argparse
+
 import sys
 import time
+import argparse
+import subprocess as sp
 
 import cv2
 import face
@@ -71,11 +73,16 @@ def main(args):
     frame_rate = 0
     frame_count = 0
 
-    # video_capture = cv2.VideoCapture(0)
-    video_capture = cv2.VideoCapture('rtsp://192.168.1.110:8554/test')
+    if args.remote:
+        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
+                  "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+                  "payload=(int)96\" ! rtph265depay ! decodebin ! autovideosink sync=false" % args.source
+        pipe = sp.Popen(command, shell=True, stdout=sp.PIPE, bufsize=10**8)
+    else:
+        video_capture = cv2.VideoCapture('%s' % args.source)
+        video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     if args.face or args.track:
         face_recognition = face.Recognition()
     if args.object or args.track:
@@ -89,7 +96,12 @@ def main(args):
     while True:
         # Capture frame-by-frame
         faces = None
-        ret, frame = video_capture.read()
+        if args.remote:
+            raw_image = pipe.stdout.read(1920 * 1080 * 3)
+            image = np.fromstring(raw_image, dtype='uint8')
+            frame = image.reshape((1920, 1080, 3))
+        else:
+            ret, frame = video_capture.read()
 
         if args.object:
             object_detection.find_objects(frame)
@@ -117,6 +129,8 @@ def main(args):
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        if args.remote:
+            pipe.stdout.flush()
 
     # When everything is done, release the capture
     video_capture.release()
@@ -126,14 +140,12 @@ def main(args):
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--debug', action='store_true',
-                        help='Enable some debug outputs.')
-    parser.add_argument('--object', action='store_true',
-                        help='Enable detect objects.')
-    parser.add_argument('--face', action='store_true',
-                        help='Enable detect faces.')
-    parser.add_argument('--track', action='store_true',
-                        help='Enable visual tracker.')
+    parser.add_argument('--debug', action='store_true', help='Enable some debug outputs.')
+    parser.add_argument('--object', action='store_true',  help='Enable detect objects.')
+    parser.add_argument('--face', action='store_true', help='Enable detect faces.')
+    parser.add_argument('--track', action='store_true', help='Enable visual tracker.')
+    parser.add_argument('-r', '--remote', action='store_true', help='Get video from remote server')
+    parser.add_argument('-s', '--source', type=str, default='/dev/video0', help='The video source, default: /dev/video0')
     return parser.parse_args(argv)
 
 
