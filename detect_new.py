@@ -74,9 +74,13 @@ def main(args):
     frame_count = 0
 
     if args.remote:
-        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
-                  "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
-                  "payload=(int)96\" ! rtph265depay ! decodebin ! autovideosink sync=false" % args.source
+        # command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
+        #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+        #           "payload=(int)96\" ! rtph265depay !  decodebin ! fdsink" % args.source
+        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
+                  "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
+                  "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
+                  "\"video/x-raw, format=(string)RGB;A\" ! fdsink" % args.source
         pipe = sp.Popen(command, shell=True, stdout=sp.PIPE, bufsize=10**8)
     else:
         video_capture = cv2.VideoCapture('%s' % args.source)
@@ -97,9 +101,9 @@ def main(args):
         # Capture frame-by-frame
         faces = None
         if args.remote:
-            raw_image = pipe.stdout.read(1920 * 1080 * 3)
-            image = np.fromstring(raw_image, dtype='uint8')
-            frame = image.reshape((1920, 1080, 3))
+            raw_image = pipe.stdout.read(1920 * 1080 * 4)
+            frame = np.fromstring(raw_image, dtype='uint8').reshape((1080, 1920, 4))
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
         else:
             ret, frame = video_capture.read()
 
