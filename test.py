@@ -252,25 +252,144 @@ import os
 # print(b.shape)
 
 # import collections
+# 3221 8554/test
 
+# import gi
+# import pygst
+# gi.require_version('Gst', '1.0')
+# gi.require_version('Gtk', '3.0')
+# from gi.repository import Gst, Gtk, GObject
+# import cv2
+#
+# Gst.init(None)
+# pipeline = Gst.Pipeline()
+# # gst-launch-1.0 udpsrc uri="udp://192.168.1.105:3221" caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" !
+# # rtph265depay ! decodebin ! autovideosink sync=false
+#
+# # Create elements
+# # udpsrc = Gst.ElementFactory.make('udpsrc')
+# # rtph265depay = Gst.ElementFactory.make('rtph265depay')
+# # autovideosink = Gst.ElementFactory.make('autovideosink')
+# #
+# # caps = Gst.caps_from_string('application/x-rtp, media=(string)video, clock-rate=(int)90000, '
+# #                             'encoding-name=(string)H265, payload=(int)96')
+#
+# # udpsrc.set_property('port', 3221)
+# # udpsrc.set_property('uri', "udp://192.168.1.105:3221")
+# # udpsrc.set_property('caps', caps)
+#
+# # autovideosink.set_property('sync', False)
+#
+# filesrc = Gst.ElementFactory.make("filesrc", "filesrc")
+# avidemux = Gst.ElementFactory.make("avidemux", "avidemux")
+# decodebin = Gst.ElementFactory.make("decodebin", "decodebin")
+# appsink = Gst.ElementFactory.make("autovideosink", "appsink")
+#
+# filesrc.set_property('location', '/home/id/TownCentreXVID.avi')
+#
+# pipeline.add(filesrc)
+# pipeline.add(avidemux)
+# pipeline.add(decodebin)
+# pipeline.add(appsink)
+#
+# pipeline.set_state(Gst.State.PLAYING)
+# Gtk.main()
+#
+# # cap = cv2.VideoCapture('/home/id/LG.OLED.4K.DEMO_NASA.Two/LG.OLED.4K.DEMO_NASA.Two.ts')
+# # cap = cv2.VideoCapture('rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov')
+# # cap = cv2.VideoCapture('rtsp://192.168.1.168:8554/test')
+# cap = cv2.VideoCapture('gst-launch-1.0 filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! autovideosink', cv2.CAP_GSTREAMER)
+# # cap = cv2.VideoCapture('udpsrc uri=udp://192.168.1.105:3221  ! application/x-rtp,media=video,clock-rate=90000,encoding-name=H265,payload=96 ! rtph265depay ! decodebin ! appsink', cv2.CAP_GSTREAMER)
+# print cap.isOpened()
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+# while True:
+#
+#     ret, im = cap.read()
+#
+#     cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+#     cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+#     cv2.imshow("Video", im)
+#
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+#
+# cap.release()
+# cv2.destroyAllWindows()
+
+import gi
 import cv2
+import numpy as np
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
 
-# cap = cv2.VideoCapture('/home/id/LG.OLED.4K.DEMO_NASA.Two/LG.OLED.4K.DEMO_NASA.Two.ts')
-# cap = cv2.VideoCapture('rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov')
-cap = cv2.VideoCapture('rtsp://192.168.1.110:8554/test')
-print cap.isOpened()
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-while True:
+Gst.init(None)
 
-    ret, im = cap.read()
+# Build the pipeline
+# pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.113:3221\" caps=\"application/x-rtp, media=(string)video, "
+#                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
+#                             "payload=(int)96\" ! rtph265depay ! decodebin ! autovideosink sync=false name=sink")
 
-    cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    cv2.imshow("Video", im)
+# appsink=pipeline.get_by_name("sink")
+# pipeline.set_state(Gst.State.PAUSED)
+# pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, 11)
+# smp = appsink.emit('pull-preroll')
+# buf = smp.get_buffer()
+#
+# data = buf.extract_dup(0, buf.get_size())[:307200]
+# frame = np.fromstring(data, dtype='uint8').reshape((480, 640, 3))
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
 
-cap.release()
-cv2.destroyAllWindows()
+# Start playing
+# pipeline.set_state(Gst.State.PLAYING)
+#
+# # Wait until error or EOS
+# bus = pipeline.get_bus()
+# msg = bus.timed_pop_filtered(
+#     Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
+#
+# # Free resources
+# pipeline.set_state(Gst.State.NULL)
+
+# import numpy
+# import subprocess as sp
+#
+# command = "gst-launch-1.0 udpsrc uri=\"udp://192.168.1.113:3221\" caps=\"application/x-rtp, media=(string)video, " \
+#           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+#           "payload=(int)96\" ! rtph265depay ! decodebin ! autovideosink sync=false"
+# pipe = sp.Popen(command, shell=True, stdout=sp.PIPE, bufsize=10**8)
+#
+# while True:
+#     # Capture frame-by-frame
+#     raw_image = pipe.stdout.read(1920*1080*3)
+#     # transform the byte read into a numpy array
+#     image = numpy.fromstring(raw_image, dtype='uint8')
+#     image = image.reshape((1920, 1080, 3))          # Notice how height is specified first and then width
+#     if image is not None:
+#         cv2.imshow('Video', image)
+#
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+#     pipe.stdout.flush()
+#
+# cv2.destroyAllWindows()
+
+# cap = cv2.VideoCapture('/dev/video0')
+# print cap.isOpened()
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+#
+# while True:
+#
+#     ret, im = cap.read()
+#
+#     cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+#     cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+#     cv2.imshow("Video", im)
+#
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+#
+# cap.release()
+# cv2.destroyAllWindows()
+
