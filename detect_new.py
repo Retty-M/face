@@ -73,19 +73,9 @@ def main(args):
     frame_rate = 0
     frame_count = 0
 
-    if args.remote:
-        # command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
-        #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
-        #           "payload=(int)96\" ! rtph265depay !  decodebin ! fdsink" % args.source
-        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
-                  "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
-                  "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
-                  "\"video/x-raw, format=(string)RGB;A\" ! fdsink" % args.source
-        pipe = sp.Popen(command, shell=True, stdout=sp.PIPE, bufsize=10**8)
-    else:
-        video_capture = cv2.VideoCapture('%s' % args.source)
-        video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    if args.debug:
+        print("Debug enabled")
+        face.debug = True
 
     if args.face or args.track:
         face_recognition = face.Recognition()
@@ -93,9 +83,19 @@ def main(args):
         object_detection = object.Detection()
     start_time = time.time()
 
-    if args.debug:
-        print("Debug enabled")
-        face.debug = True
+    if args.remote:
+        # command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
+        #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+        #           "payload=(int)96\" ! rtph265depay !  decodebin ! fdsink" % args.source
+        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
+                  "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
+                  "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
+                  "\"video/x-raw, format=(string)RGBA\" ! fdsink" % args.source
+        pipe = sp.Popen(command, shell=True, stdout=sp.PIPE)
+    else:
+        video_capture = cv2.VideoCapture('%s' % args.source)
+        video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     while True:
         # Capture frame-by-frame
@@ -103,7 +103,8 @@ def main(args):
         if args.remote:
             raw_image = pipe.stdout.read(1920 * 1080 * 4)
             frame = np.fromstring(raw_image, dtype='uint8').reshape((1080, 1920, 4))
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2mRGBA)
+            cv2.
         else:
             ret, frame = video_capture.read()
 
