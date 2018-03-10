@@ -255,56 +255,84 @@ import os
 
 import gi
 import numpy as np
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
-import cv2
-
-Gst.init(None)
-pipeline = Gst.Pipeline.new('pipeline')
-# gst-launch-1.0 udpsrc uri="udp://192.168.1.105:3221" caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" !
-# rtph265depay ! decodebin ! autovideosink sync=false
-
-# Create elements
-# udpsrc = Gst.ElementFactory.make('udpsrc')
-# rtph265depay = Gst.ElementFactory.make('rtph265depay')
-# autovideosink = Gst.ElementFactory.make('autovideosink')
+# gi.require_version('Gst', '1.0')
+# from gi.repository import Gst
+# import cv2
 #
-# caps = Gst.caps_from_string('application/x-rtp, media=(string)video, clock-rate=(int)90000, '
-#                             'encoding-name=(string)H265, payload=(int)96')
-
-# udpsrc.set_property('port', 3221)
-# udpsrc.set_property('uri', "udp://192.168.1.105:3221")
-# udpsrc.set_property('caps', caps)
-
-# autovideosink.set_property('sync', False)
-
-filesrc = Gst.ElementFactory.make("filesrc", "filesrc")
-avidemux = Gst.ElementFactory.make("avidemux", "avidemux")
-decodebin = Gst.ElementFactory.make("decodebin", "decodebin")
-appsink = Gst.ElementFactory.make("autovideosink", "appsink")
-
-filesrc.set_property('location', '/home/id/TownCentreXVID.avi')
-
-if not Gst.Element.link(filesrc, appsink):
-    print("Elements could not be linked.")
-
-pipeline.add(filesrc)
-pipeline.add(avidemux)
-pipeline.add(decodebin)
-pipeline.add(appsink)
-
-# Start playing
-ret = pipeline.set_state(Gst.State.PLAYING)
-if ret == Gst.StateChangeReturn.FAILURE:
-    print("Unable to set the pipeline to the playing state.")
-
-# Wait until error or EOS
-bus = pipeline.get_bus()
-msg = bus.timed_pop_filtered(
-    Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
-
-# Free resources
-pipeline.set_state(Gst.State.NULL)
+# Gst.init(None)
+#
+# # gst-launch-1.0 udpsrc uri="udp://192.168.1.105:3221" caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" !
+# # rtph265depay ! decodebin ! autovideosink sync=false
+#
+# # Create elements
+# # udpsrc = Gst.ElementFactory.make('udpsrc')
+# # rtph265depay = Gst.ElementFactory.make('rtph265depay')
+# # autovideosink = Gst.ElementFactory.make('autovideosink')
+# #
+# # caps = Gst.caps_from_string('application/x-rtp, media=(string)video, clock-rate=(int)90000, '
+# #                             'encoding-name=(string)H265, payload=(int)96')
+#
+# # udpsrc.set_property('port', 3221)
+# # udpsrc.set_property('uri', "udp://192.168.1.105:3221")
+# # udpsrc.set_property('caps', caps)
+#
+# # autovideosink.set_property('sync', False)
+#
+# # filesrc = Gst.ElementFactory.make("videotestsrc", "source")
+# # appsink = Gst.ElementFactory.make("autovideosink", "sink")
+#
+# filesrc = Gst.ElementFactory.make("filesrc", "filesrc")
+# avidemux = Gst.ElementFactory.make("avidemux", "avidemux")
+# decodebin = Gst.ElementFactory.make("decodebin", "decodebin")
+# appsink = Gst.ElementFactory.make("autovideosink", "appsink")
+#
+# pipeline = Gst.Pipeline.new('pipeline')
+#
+# if not filesrc or not appsink or not pipeline:
+#     print("Not all elements could be created.")
+#     exit(-1)
+#
+# pipeline.add(filesrc)
+# pipeline.add(avidemux)
+# pipeline.add(decodebin)
+# pipeline.add(appsink)
+#
+# # if not Gst.Element.link(filesrc, decodebin):
+# #     print("Elements could not be linked 0.")
+# if not Gst.Element.link(filesrc, avidemux):
+#     print("Elements could not be linked 1.")
+# if not Gst.Element.link(filesrc, appsink):
+#     print("Elements could not be linked 2.")
+#
+# # filesrc.link(avidemux)
+# # avidemux.link(decodebin)
+# # decodebin.link(appsink)
+#
+# # filesrc.set_property('location', '/home/id/TownCentreXVID.avi')
+#
+# # Start playing
+# ret = pipeline.set_state(Gst.State.PLAYING)
+# if ret == Gst.StateChangeReturn.FAILURE:
+#     print("Unable to set the pipeline to the playing state.")
+#
+# # Wait until error or EOS
+# bus = pipeline.get_bus()
+# msg = bus.timed_pop_filtered(
+#     Gst.CLOCK_TIME_NONE, Gst.MessageType.ERROR | Gst.MessageType.EOS)
+#
+# if (msg):
+#     if msg.type == Gst.MessageType.ERROR:
+#         err, debug = msg.parse_error()
+#         print("Error received from element %s: %s" % (
+#             msg.src.get_name(), err))
+#         print("Debugging information: %s" % debug)
+#     elif msg.type == Gst.MessageType.EOS:
+#         print("End-Of-Stream reached.")
+#     else:
+#         print("Unexpected message received.")
+#
+# # Free resources
+# pipeline.set_state(Gst.State.NULL)
 
 
 # # cap = cv2.VideoCapture('/home/id/LG.OLED.4K.DEMO_NASA.Two/LG.OLED.4K.DEMO_NASA.Two.ts')
@@ -329,42 +357,46 @@ pipeline.set_state(Gst.State.NULL)
 # cap.release()
 # cv2.destroyAllWindows()
 
-# import gi
-# import cv2
-# import numpy as np
-# gi.require_version('Gst', '1.0')
-# from gi.repository import Gst
-#
-# Gst.init(None)
-#
-# # Build the pipeline
+import gi
+import cv2
+import numpy as np
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
+
+Gst.init(None)
+
+# Build the pipeline
 # pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3224\" caps=\"application/x-rtp, media=(string)video, "
 #                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
 #                             "payload=(int)96\" ! rtph265depay ! decodebin ! video/x-raw, format=RGB ! videoconvert ! appsink name=sink")
-#
-# appsink = pipeline.get_by_name('sink')
+
+pipeline = Gst.parse_launch("filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+
+appsink = pipeline.get_by_name('sink')
 # appsink.set_property("max-buffers", 1)
 # appsink.set_property('emit-signals', True)
 # appsink.set_property('sync', False)
-
+#
 # videoconvert = pipeline.get_by_name('convert')
 # videoconvert.set_property('format', 'RGBA')
 
-# pipeline.set_state(Gst.State.PLAYING)
-# pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 11)
-# print (pipeline.query_duration(Gst.Format.BUFFERS))
-# smp = appsink.emit('pull-preroll')
-# buf = smp.get_buffer()
-# pipeline.set_state(Gst.State.PAUSED)
-# data = buf.extract_dup(0, buf.get_size())[:3110400]
-# frame = np.fromstring(data, dtype='uint8').reshape((720, 1080, 4))
-#
-# cv2.imshow("Video", frame)
-#
-# while True:
-#     if cv2.waitKey(1) & 0xFF == ord('q'):
-#         cv2.destroyAllWindows()
-#         break
+while True:
+    pipeline.set_state(Gst.State.PLAYING)
+    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+    print (pipeline.query_duration(Gst.Format.BUFFERS))
+    smp = appsink.emit('pull-sample')
+    buf = smp.get_buffer()
+    pipeline.set_state(Gst.State.PAUSED)
+    data = buf.extract_dup(0, buf.get_size())
+    frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+
+    frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+    cv2.imshow("Video", frame_new)
+
+    while True:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            # cv2.destroyAllWindows()
+            break
 
 
 # # Start playing
