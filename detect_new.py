@@ -29,6 +29,11 @@ import time
 import argparse
 import subprocess as sp
 
+
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
+
 import cv2
 import face
 import object
@@ -67,6 +72,20 @@ def add_overlays(frame, faces, frame_rate):
     #             thickness=2, lineType=2)
 
 
+def get_frame(pipeline, appsink):
+    # pipeline.set_state(Gst.State.PLAYING)
+    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+
+    smp = appsink.emit('pull-preroll')
+    buf = smp.get_buffer()
+    pipeline.set_state(Gst.State.PAUSED)
+    data = buf.extract_dup(0, buf.get_size())
+    frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+
+    frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+    return frame_new
+
+
 def main(args):
     frame_interval = 3  # Number of frames after which to run face detection
     fps_display_interval = 5  # seconds
@@ -87,11 +106,18 @@ def main(args):
         # command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
         #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
         #           "payload=(int)96\" ! rtph265depay !  decodebin ! fdsink" % args.source
-        command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
+        # command = "gst-launch-1.0 udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
+        #           "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
+        #           "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
+        #           "\"video/x-raw, format=(string)RGBA\" ! fdsink" % args.source
+        # pipe = sp.Popen(command, shell=True, stdout=sp.PIPE)
+        Gst.init(None)
+        command = "udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
                   "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
-                  "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
-                  "\"video/x-raw, format=(string)RGBA\" ! fdsink" % args.source
-        pipe = sp.Popen(command, shell=True, stdout=sp.PIPE)
+                  "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink" % args.source
+        pipeline = Gst.parse_launch(command)
+        appsink = pipeline.get_by_name('sink')
+        pipeline.set_state(Gst.State.PLAYING)
     else:
         video_capture = cv2.VideoCapture('%s' % args.source)
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -101,10 +127,11 @@ def main(args):
         # Capture frame-by-frame
         faces = None
         if args.remote:
-            raw_image = pipe.stdout.read(1920 * 1080 * 4)
-            frame = np.fromstring(raw_image, dtype='uint8').reshape((1080, 1920, 4))
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2mRGBA)
-            cv2.
+            frame = get_frame(pipeline, appsink)
+            cv2.imwrite('./audio/i.jpg', frame)
+            # raw_image = pipe.stdout.read(3110400)
+            # frame = np.fromstring(raw_image, dtype='uint8').reshape((1620, 1920))
+            # frame = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
         else:
             ret, frame = video_capture.read()
 
@@ -122,20 +149,21 @@ def main(args):
             #     frame_rate = int(frame_count / (end_time - start_time))
             #     start_time = time.time()
             #     frame_count = 0
-
+        # print(len(faces))
         frame_tmp = add_overlays(frame, faces, frame_rate)
         if frame_tmp is not None:
             frame = frame_tmp
 
         # frame_count += 1
-        cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+        # cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         if args.remote:
-            pipe.stdout.flush()
+            # pipe.stdout.flush()
+            pipeline.set_state(Gst.State.PLAYING)
 
     # When everything is done, release the capture
     video_capture.release()

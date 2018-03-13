@@ -362,17 +362,57 @@ import cv2
 import numpy as np
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
+from threading import Thread
 
-Gst.init(None)
+
+class MyThread(Thread):
+
+    def __init__(self, url):
+        Thread.__init__(self)
+        Gst.init(None)
+        self.frame = None
+        self.pipeline = Gst.parse_launch(
+            "filesrc location=/home/ubuntu/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+        self.appsink = self.pipeline.get_by_name('sink')
+
+    def run(self):
+        while True:
+            self.pipeline.set_state(Gst.State.PLAYING)
+            self.pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+            smp = self.appsink.emit('pull-preroll')
+            buf = smp.get_buffer()
+            self.pipeline.set_state(Gst.State.PAUSED)
+            data = buf.extract_dup(0, buf.get_size())[:3110400]
+            self.frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+
+    def get_frame(self):
+        return self.frame
+
+
+t = MyThread('ss')
+t.start()
+t.join()
+frame = t.get_frame()
+while True:
+    if frame is not None:
+        frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+        cv2.imshow("Video", frame_new)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            # cv2.destroyAllWindows()
+            break
+
+
+# Gst.init(None)
 
 # Build the pipeline
 # pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3224\" caps=\"application/x-rtp, media=(string)video, "
 #                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
 #                             "payload=(int)96\" ! rtph265depay ! decodebin ! video/x-raw, format=RGB ! videoconvert ! appsink name=sink")
 
-pipeline = Gst.parse_launch("filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+# pipeline = Gst.parse_launch("filesrc location=/home/ubuntu/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
 
-appsink = pipeline.get_by_name('sink')
+# appsink = pipeline.get_by_name('sink')
 # appsink.set_property("max-buffers", 1)
 # appsink.set_property('emit-signals', True)
 # appsink.set_property('sync', False)
@@ -380,23 +420,23 @@ appsink = pipeline.get_by_name('sink')
 # videoconvert = pipeline.get_by_name('convert')
 # videoconvert.set_property('format', 'RGBA')
 
-while True:
-    pipeline.set_state(Gst.State.PLAYING)
-    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
-    print (pipeline.query_duration(Gst.Format.BUFFERS))
-    smp = appsink.emit('pull-sample')
-    buf = smp.get_buffer()
-    pipeline.set_state(Gst.State.PAUSED)
-    data = buf.extract_dup(0, buf.get_size())
-    frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
-
-    frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
-    cv2.imshow("Video", frame_new)
-
-    while True:
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.destroyAllWindows()
-            break
+# while True:
+#     pipeline.set_state(Gst.State.PLAYING)
+#     pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+#     print (pipeline.query_duration(Gst.Format.BUFFERS))
+#     smp = appsink.emit('pull-preroll')
+#     buf = smp.get_buffer()
+#     pipeline.set_state(Gst.State.PAUSED)
+#     data = buf.extract_dup(0, buf.get_size())[:3110400]
+#     frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+#
+#     frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+#     cv2.imshow("Video", frame_new)
+#
+#     while True:
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             # cv2.destroyAllWindows()
+#             break
 
 
 # # Start playing
