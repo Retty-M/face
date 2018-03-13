@@ -359,6 +359,7 @@ import numpy as np
 
 import gi
 import cv2
+import time
 import numpy as np
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
@@ -371,19 +372,27 @@ class MyThread(Thread):
         Thread.__init__(self)
         Gst.init(None)
         self.frame = None
+        self.stopped = False
         self.pipeline = Gst.parse_launch(
-            "filesrc location=/home/ubuntu/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+            "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
         self.appsink = self.pipeline.get_by_name('sink')
 
     def run(self):
+        print('ss')
         while True:
             self.pipeline.set_state(Gst.State.PLAYING)
             self.pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
             smp = self.appsink.emit('pull-preroll')
             buf = smp.get_buffer()
             self.pipeline.set_state(Gst.State.PAUSED)
-            data = buf.extract_dup(0, buf.get_size())[:3110400]
-            self.frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+            self.frame = buf.extract_dup(0, buf.get_size())[:3110400]
+            # self.frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+            if self.stopped:
+                self.pipeline.set_state(Gst.State.NULL)
+                break
+
+    def stop(self):
+        self.stopped = True
 
     def get_frame(self):
         return self.frame
@@ -391,15 +400,18 @@ class MyThread(Thread):
 
 t = MyThread('ss')
 t.start()
-t.join()
-frame = t.get_frame()
+# t.join()
+
 while True:
-    if frame is not None:
+    data = t.get_frame()
+    if data is not None:
+        frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
         frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
         cv2.imshow("Video", frame_new)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.destroyAllWindows()
+            t.stop()
+            cv2.destroyAllWindows()
             break
 
 
