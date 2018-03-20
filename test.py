@@ -357,63 +357,132 @@ import numpy as np
 # cap.release()
 # cv2.destroyAllWindows()
 
+# ******************************************** Thread ************************************************* #
+
+# import gi
+# import cv2
+# import time
+# import numpy as np
+# gi.require_version('Gst', '1.0')
+# from gi.repository import Gst
+# from threading import Thread
+#
+#
+# class MyThread(Thread):
+#
+#     def __init__(self, url):
+#         Thread.__init__(self)
+#         Gst.init(None)
+#         self.frame = None
+#         self.stopped = False
+#         self.pipeline = Gst.parse_launch(
+#             "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+#         self.appsink = self.pipeline.get_by_name('sink')
+#
+#     def run(self):
+#         print('ss')
+#         while True:
+#             self.pipeline.set_state(Gst.State.PLAYING)
+#             self.pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+#             smp = self.appsink.emit('pull-preroll')
+#             buf = smp.get_buffer()
+#             self.pipeline.set_state(Gst.State.PAUSED)
+#             self.frame = buf.extract_dup(0, buf.get_size())[:3110400]
+#             # self.frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+#             if self.stopped:
+#                 self.pipeline.set_state(Gst.State.NULL)
+#                 break
+#
+#     def stop(self):
+#         self.stopped = True
+#
+#     def get_frame(self):
+#         return self.frame
+#
+#
+# t = MyThread('ss')
+# t.start()
+# # t.join()
+#
+# while True:
+#     data = t.get_frame()
+#     if data is not None:
+#         frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+#         frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+#         cv2.imshow("Video", frame_new)
+#
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             t.stop()
+#             cv2.destroyAllWindows()
+#             break
+
+# ******************************************** Thread ************************************************* #
+
 import gi
 import cv2
 import time
 import numpy as np
+from multiprocessing import Queue, Process, Pipe
+
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
-from threading import Thread
 
 
-class MyThread(Thread):
-
-    def __init__(self, url):
-        Thread.__init__(self)
-        Gst.init(None)
-        self.frame = None
-        self.stopped = False
-        self.pipeline = Gst.parse_launch(
-            "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
-        self.appsink = self.pipeline.get_by_name('sink')
-
-    def run(self):
-        print('ss')
-        while True:
-            self.pipeline.set_state(Gst.State.PLAYING)
-            self.pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
-            smp = self.appsink.emit('pull-preroll')
-            buf = smp.get_buffer()
-            self.pipeline.set_state(Gst.State.PAUSED)
-            self.frame = buf.extract_dup(0, buf.get_size())[:3110400]
-            # self.frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
-            if self.stopped:
-                self.pipeline.set_state(Gst.State.NULL)
-                break
-
-    def stop(self):
-        self.stopped = True
-
-    def get_frame(self):
-        return self.frame
-
-
-t = MyThread('ss')
-t.start()
-# t.join()
-
-while True:
-    data = t.get_frame()
-    if data is not None:
+def get_frame(q):
+    Gst.init(None)
+    pipeline = Gst.parse_launch(
+        "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+    appsink = pipeline.get_by_name('sink')
+    # print(q.full())
+    while True:
+        # time.sleep(0.05)
+        # if q.full():
+        #     q.get()
+    # else:
+        pipeline.set_state(Gst.State.PLAYING)
+        pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+        smp = appsink.emit('pull-preroll')
+        buf = smp.get_buffer()
+        pipeline.set_state(Gst.State.PAUSED)
+        data = buf.extract_dup(0, buf.get_size())[:3110400]
         frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
         frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
-        cv2.imshow("Video", frame_new)
+        # q.put(frame_new)
+        q.send(frame_new)
+
+
+(con1, con2) = Pipe()
+q = Queue(120)
+p = Process(target=get_frame, args=(con1,))
+p.start()
+# time.sleep(5)
+# print(q.qsize())
+# print(q.get())
+start = time.clock()
+count = 0
+while True:
+    # print(time.clock() - start)
+    # frame = q.get()
+    frame = con2.recv()
+    time.sleep(0.05)
+    # print(q.qsize())
+    if frame is not None:
+    # if time.clock() - start < 3:
+        # frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+        # frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+        # count += 1
+        cv2.imshow("Video", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            t.stop()
+            p.terminate()
             cv2.destroyAllWindows()
             break
-
+    else:
+        print('sd%d' % count)
+        p.terminate()
+        cv2.destroyAllWindows()
+        break
+p.terminate()
 
 # Gst.init(None)
 

@@ -1,7 +1,9 @@
 # coding=utf-8
 import os
 import cv2
+import sys
 import pickle
+import argparse
 import numpy as np
 import face as Face
 from os.path import join as pjoin
@@ -21,9 +23,9 @@ def add_overlays(frame, face, image_rate):
                 thickness=2, lineType=2)
 
 
-def capture(device_num):
+def capture(device_num, face_capture):
     # Number of frames after which to run face detection
-    frame_interval = 3
+    frame_interval = 2
     frame_count = 0
     image_count = 0
     encoder = []
@@ -34,20 +36,20 @@ def capture(device_num):
     video_capture = cv2.VideoCapture(device_num)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    face_capture = Face.Capture()
+    # face_capture = Face.Capture()
 
     while True:
         # Capture frame-by-frame
         face = None
         ret, frame = video_capture.read()
-        if frame_count > 80:
+        if frame_count > 40:
             if (frame_count % frame_interval) == 0:
                 face = face_capture.capture_encode(frame)
                 if face is not None:
                     image_count += 1
                     encoder.append(face.embedding)
                     cv2.imwrite('./train_data/%s/%s_%d.jpg' % (name, name, image_count), frame)
-        add_overlays(frame, face, image_count*2)
+        add_overlays(frame, face, image_count)
 
         frame_count += 1
         cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
@@ -58,7 +60,7 @@ def capture(device_num):
             os.system('rm -rf ./train_data/%s' % name)
             break
 
-        if image_count == 50:
+        if image_count == 100:
             break
 
     # encoder = np.array(encoder).reshape(-1, 128)
@@ -103,6 +105,22 @@ def train(data_dir, classifier_filename):
     print 'Saved classifier model to file "%s"' % classifier_filename
 
 
+def main(args):
+    if args.train is False:
+        face_capture = Face.Capture()
+        while True:
+            capture(1, face_capture)
+            key = raw_input('继续（Y）退出（N）:')
+            if str(key).upper() == 'N':
+                break
+    train('./train_data', '0308.pkl')
+
+
+def parse_arguments(argv):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train', action='store_true', help='Enable some debug outputs.')
+    return parser.parse_args(argv)
+
+
 if __name__ == '__main__':
-    capture(0)
-    train('./train_data', '0208.pkl')
+    main(parse_arguments(sys.argv[1:]))

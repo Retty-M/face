@@ -155,8 +155,8 @@ def main(args):
             frame = frame_tmp
 
         # frame_count += 1
-        # cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-        # cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -178,7 +178,7 @@ def parse_arguments(argv):
     parser.add_argument('--face', action='store_true', help='Enable detect faces.')
     parser.add_argument('--track', action='store_true', help='Enable visual tracker.')
     parser.add_argument('-r', '--remote', action='store_true', help='Get video from remote server')
-    parser.add_argument('-s', '--source', type=str, default='/dev/video0', help='The video source, default: /dev/video0')
+    parser.add_argument('-s', '--source', type=str, default='/dev/video1', help='The video source, default: /dev/video1')
     return parser.parse_args(argv)
 
 

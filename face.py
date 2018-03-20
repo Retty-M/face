@@ -45,7 +45,7 @@ from sklearn.externals import joblib
 gpu_memory_fraction = 0.5
 facenet_model_checkpoint = "./models/20170511-185253"
 boundary_model = "boundary.model"
-classifier_model = "0208.pkl"
+classifier_model = "0308.pkl"
 debug = False
 
 
@@ -114,7 +114,7 @@ class Recognition:
             # if result > 0:
             # available_faces.append(face)
             face.name, face.score = self.identifier.identify(face)
-            if face.score >= 0.8:
+            if face.score >= 0.5:
                 available_faces.append(face)
 
         return available_faces
