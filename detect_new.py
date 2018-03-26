@@ -27,44 +27,50 @@ Based on code from https://github.com/shanren7/real_time_face_recognition
 import sys
 import time
 import argparse
-import subprocess as sp
-
 
 import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
-
 import cv2
 import face
 import object
 
 import numpy as np
+from multiprocessing import Queue, Process
 from PIL import Image, ImageDraw, ImageFont
 
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst
 
-def add_overlays(frame, faces, frame_rate):
-    if faces is not None:
+
+def add_overlays(frame, faces_T, faces_F, frame_rate):
+    if faces_T is not None or faces_F is not None:
 
         cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pil_frame = Image.fromarray(cv2_frame)
+        draw = ImageDraw.Draw(pil_frame)
+        font = ImageFont.truetype('simhei', 20, encoding='utf-8')
 
-        for face in faces:
+        for face in faces_T:
             face_bb = face.bounding_box.astype(int)
 
-            draw = ImageDraw.Draw(pil_frame)
             draw.rectangle((face_bb[0], face_bb[1], face_bb[2], face_bb[3]), outline=(0, 255, 0))
 
             # cv2.rectangle(frame,
             #               (face_bb[0], face_bb[1]), (face_bb[2], face_bb[3]),
             #               (0, 255, 0), 2)
             if face.name is not None:
-                font = ImageFont.truetype('simhei', 20, encoding='utf-8')
                 draw.text((face_bb[0], face_bb[3]),
                           u'%s %d%%' % (unicode(face.name, 'utf-8'), face.score*100),
                           (0, 255, 0), font=font)
                 # cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
                 #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
                 #             thickness=2, lineType=2)
+
+        for face in faces_F:
+            face_bb = face.bounding_box.astype(int)
+
+            draw.rectangle((face_bb[0], face_bb[1], face_bb[2], face_bb[3]), outline=(255, 0, 0))
+            draw.text((face_bb[0], face_bb[3]), u'未授权', (255, 0, 0), font=font)
+
         return cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
 
     # cv2.putText(frame, str(frame_rate) + " fps", (10, 30),
@@ -72,18 +78,32 @@ def add_overlays(frame, faces, frame_rate):
     #             thickness=2, lineType=2)
 
 
-def get_frame(pipeline, appsink):
-    # pipeline.set_state(Gst.State.PLAYING)
-    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+def get_frame(q, source):
+    Gst.init(None)
+    # command = "udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
+    #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+    #           "payload=(int)96\" ! rtph265depay !  decodebin ! appsink name=sink" % source
+    # pipeline = Gst.parse_launch(command)
+    pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
+                                r'clock-rate=(int)90000, encoding-name=(string)H264, '
+                                r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
+                                r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
+    appsink = pipeline.get_by_name('sink')
 
-    smp = appsink.emit('pull-preroll')
-    buf = smp.get_buffer()
-    pipeline.set_state(Gst.State.PAUSED)
-    data = buf.extract_dup(0, buf.get_size())
-    frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
-
-    frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
-    return frame_new
+    while True:
+        time.sleep(0.05)
+        if q.qsize() > 3:
+            q.get()
+        else:
+            pipeline.set_state(Gst.State.PLAYING)
+            pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+            smp = appsink.emit('pull-preroll')
+            buf = smp.get_buffer()
+            pipeline.set_state(Gst.State.PAUSED)
+            data = buf.extract_dup(0, buf.get_size())[:3110400]
+            frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+            frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+            q.put(frame_new)
 
 
 def main(args):
@@ -111,13 +131,16 @@ def main(args):
         #           "payload=(int)96\" ! rtph265depay ! decodebin ! videoconvert ! " \
         #           "\"video/x-raw, format=(string)RGBA\" ! fdsink" % args.source
         # pipe = sp.Popen(command, shell=True, stdout=sp.PIPE)
-        Gst.init(None)
-        command = "udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
-                  "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
-                  "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink" % args.source
-        pipeline = Gst.parse_launch(command)
-        appsink = pipeline.get_by_name('sink')
-        pipeline.set_state(Gst.State.PLAYING)
+        # Gst.init(None)
+        # command = "udpsrc uri=\"udp://%s\" caps = \"application/x-rtp, media=(string)video, " \
+        #           "clock-rate=(int)90000, encoding-name=(string)H265,sprop-parameter-sets=(string)1, " \
+        #           "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink" % args.source
+        # pipeline = Gst.parse_launch(command)
+        # appsink = pipeline.get_by_name('sink')
+        # pipeline.set_state(Gst.State.PLAYING)
+        q = Queue()
+        p = Process(target=get_frame, args=(q, args.source,))
+        p.start()
     else:
         video_capture = cv2.VideoCapture('%s' % args.source)
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -125,10 +148,12 @@ def main(args):
 
     while True:
         # Capture frame-by-frame
-        faces = None
+        faces_T = None
+        faces_F = None
         if args.remote:
-            frame = get_frame(pipeline, appsink)
-            cv2.imwrite('./audio/i.jpg', frame)
+            # frame = get_frame(pipeline, appsink)
+            frame = q.get()
+            # cv2.imwrite('./audio/i.jpg', frame)
             # raw_image = pipe.stdout.read(3110400)
             # frame = np.fromstring(raw_image, dtype='uint8').reshape((1620, 1920))
             # frame = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
@@ -141,7 +166,7 @@ def main(args):
             object_detection.track_person(frame, face_recognition)
         if (frame_count % frame_interval) == 0:
             if args.face:
-                faces = face_recognition.identify(frame)
+                faces_T, faces_F = face_recognition.identify(frame)
 
             # Check our current fps
             # end_time = time.time()
@@ -149,8 +174,8 @@ def main(args):
             #     frame_rate = int(frame_count / (end_time - start_time))
             #     start_time = time.time()
             #     frame_count = 0
-        # print(len(faces))
-        frame_tmp = add_overlays(frame, faces, frame_rate)
+        # print(len(faces_T), len(faces_F))
+        frame_tmp = add_overlays(frame, faces_T, faces_F, frame_rate)
         if frame_tmp is not None:
             frame = frame_tmp
 
@@ -161,11 +186,13 @@ def main(args):
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        if args.remote:
+        # if args.remote:
             # pipe.stdout.flush()
-            pipeline.set_state(Gst.State.PLAYING)
+            # pipeline.set_state(Gst.State.PLAYING)
 
     # When everything is done, release the capture
+    if args.remote:
+        p.terminate()
     video_capture.release()
     cv2.destroyAllWindows()
 

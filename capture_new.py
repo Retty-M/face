@@ -42,7 +42,7 @@ def capture(device_num, face_capture):
         # Capture frame-by-frame
         face = None
         ret, frame = video_capture.read()
-        if frame_count > 40:
+        if frame_count > 20:
             if (frame_count % frame_interval) == 0:
                 face = face_capture.capture_encode(frame)
                 if face is not None:
@@ -70,6 +70,23 @@ def capture(device_num, face_capture):
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()
+
+
+def encoder(data_dir, face_capture):
+    for guy in os.listdir(data_dir):
+        encode = []
+        person_dir = pjoin(data_dir, guy)
+        encoder_file = pjoin(person_dir, 'encoder.npy')
+        if os.path.exists(encoder_file):
+            os.system('rm %s' % encoder_file)
+        for image in os.listdir(person_dir):
+            person_img = pjoin(person_dir, image)
+            frame = cv2.imread(person_img)
+            # cv2.imshow('image', frame)
+            face = face_capture.capture_encode(frame)
+            if face is not None:
+                encode.append(face.embedding)
+        np.save(encoder_file, encode)
 
 
 def train(data_dir, classifier_filename):
@@ -106,19 +123,25 @@ def train(data_dir, classifier_filename):
 
 
 def main(args):
-    if args.train is False:
+    if args.encode or args.capture:
+    # if args.train is False:
         face_capture = Face.Capture()
-        while True:
-            capture(1, face_capture)
-            key = raw_input('继续（Y）退出（N）:')
-            if str(key).upper() == 'N':
-                break
+        if args.encode:
+            encoder('./train_data', face_capture)
+        if args.capture:
+            while True:
+                capture(0, face_capture)
+                key = raw_input('继续（任意键）退出（N）:')
+                if str(key).upper() == 'N':
+                    break
     train('./train_data', '0308.pkl')
 
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--train', action='store_true', help='Enable some debug outputs.')
+    parser.add_argument('--capture', action='store_true', help='Enable some debug outputs.')
+    parser.add_argument('--encode', action='store_true', help='Enable some debug outputs.')
     return parser.parse_args(argv)
 
 

@@ -42,10 +42,10 @@ import facenet
 from sklearn.externals import joblib
 
 
-gpu_memory_fraction = 0.5
-facenet_model_checkpoint = "./models/20170511-185253"
+gpu_memory_fraction = 0.65
+facenet_model_checkpoint = "./models/20170512-110547"
 boundary_model = "boundary.model"
-classifier_model = "0308.pkl"
+classifier_model = "1208.pkl"
 debug = False
 
 
@@ -103,21 +103,25 @@ class Recognition:
 
     def identify(self, image):
         boundary = Boundary()
-        available_faces = []
+        faces_T = []
+        faces_F = []
         faces = self.detect.find_faces(image)
 
         for i, face in enumerate(faces):
             if debug:
                 cv2.imshow("Face: " + str(i), face.image)
             face.embedding = self.encoder.generate_embedding(face)
-            # result = boundary.detect(face)
-            # if result > 0:
-            # available_faces.append(face)
-            face.name, face.score = self.identifier.identify(face)
-            if face.score >= 0.5:
-                available_faces.append(face)
+            result = boundary.detect(face)
+            if result > 0:
+                    # faces_T.append(face)
+                face.name, face.score = self.identifier.identify(face)
+                if face.score >= 0.42:
+                    faces_T.append(face)
+            else:
+            # elif face.score <= 0.38:
+                faces_F.append(face)
 
-        return available_faces
+        return faces_T, faces_F
 
 
 class Identifier:
@@ -155,7 +159,7 @@ class Encoder:
 class Detection:
     # face detection parameters
     minsize = 20  # minimum size of face
-    threshold = [0.6, 0.7, 0.7]  # three steps's threshold
+    threshold = [0.7, 0.8, 0.8]  # three steps's threshold
     factor = 0.709  # scale factor
 
     def __init__(self, face_crop_size=160, face_crop_margin=32):
@@ -173,7 +177,6 @@ class Detection:
 
     def find_faces(self, image):
         faces = []
-
         bounding_boxes, _ = detect_face.detect_face(image, self.minsize,
                                                     self.pnet, self.rnet, self.onet,
                                                     self.threshold, self.factor)

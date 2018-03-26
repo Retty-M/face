@@ -38,29 +38,50 @@ from sklearn.externals import joblib
 
 
 def main(args):
+    # train_x = []
+    # train_y = []
+    # face_recognition = Face.Recognition()
+    # data, keys = load_data('./train_data')
+    #
+    # if args.debug:
+    #     print("Debug enabled")
+    #     Face.debug = True
+
+    # temp = 0
+    # for index, name in enumerate(keys):
+    #     # name = keys[index]
+    #     for img in data[name]:
+    #         face = face_recognition.add_identity(img, person_name=name)
+    #         if face is not None:
+    #             # print face.embedding
+    #             # print face.name
+    #             train_x.append(face.embedding)
+    #             train_y.append(keys.index(face.name))
+    #             # train_x = np.concatenate([train_x, face.embedding]) if train_x is not None else face.embedding
+    #             # train_y = np.concatenate([train_y, face.name]) if train_y is not None else face.name
+    #     print('INFO: {} has {} images available'.format(name, len(train_x) - temp))
+    #     temp = len(train_x)
+
+    keys = []
     train_x = []
     train_y = []
-    face_recognition = Face.Recognition()
-    data, keys = load_data('./train_data')
+    data_dir = './train_data'
+    for guy in os.listdir(data_dir):
+        person_dir = pjoin(data_dir, guy)
+        encoder_file = pjoin(person_dir, 'encoder.npy')
+        if os.path.exists(encoder_file):
+            keys.append(guy)
+            encoder = np.load(encoder_file)
+            if len(train_x) == 0:
+                train_x = encoder
+            else:
+                train_x = np.append(train_x, encoder, axis=0)
+            for i in range(0, encoder.shape[0]):
+                train_y.append(keys.index(guy))
+            print('INFO: {}\'s encoder file is loaded'.format(guy))
+        else:
+            print('ERROR: cannot find {}\'s encoder file'.format(guy))
 
-    if args.debug:
-        print("Debug enabled")
-        Face.debug = True
-
-    temp = 0
-    for index, name in enumerate(keys):
-        # name = keys[index]
-        for img in data[name]:
-            face = face_recognition.add_identity(img, person_name=name)
-            if face is not None:
-                # print face.embedding
-                # print face.name
-                train_x.append(face.embedding)
-                train_y.append(keys.index(face.name))
-                # train_x = np.concatenate([train_x, face.embedding]) if train_x is not None else face.embedding
-                # train_y = np.concatenate([train_y, face.name]) if train_y is not None else face.name
-        print('INFO: {} has {} images available'.format(name, len(train_x) - temp))
-        temp = len(train_x)
     train_x = np.array(train_x).reshape(-1, 128)
     train_y = np.array(train_y)
     print(train_x.shape)
@@ -70,7 +91,7 @@ def main(args):
 
 
 def load_data(data_dir):
-    keys = np.ndarray()
+    keys = []
     data = {}
     for guy in os.listdir(data_dir):
         curr_pics = []
@@ -78,8 +99,9 @@ def load_data(data_dir):
         person_dir = pjoin(data_dir, guy)
         for f in os.listdir(person_dir):
             img_dir = pjoin(person_dir, f)
-            img = cv2.imread(img_dir)
-            curr_pics.append(img)
+            if os.path.splitext(img_dir)[1] == '.jpg':
+                img = cv2.imread(img_dir)
+                curr_pics.append(img)
         data[guy] = curr_pics
         print('INFO: {} images number is {}'.format(guy, len(curr_pics)))
     return data, keys
@@ -87,7 +109,7 @@ def load_data(data_dir):
 
 def train_boundary(emb_array, boundary_filename):
     print '------- Training Boundary -------'
-    model = OneClassSVM(nu=0.005, gamma=0.5)
+    model = OneClassSVM(kernel='linear', nu=0.001, gamma=0.5)
     model.fit(emb_array)
 
     joblib.dump(model, boundary_filename)

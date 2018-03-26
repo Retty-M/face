@@ -418,81 +418,139 @@ import numpy as np
 
 # ******************************************** Thread ************************************************* #
 
+# import gi
+# import cv2
+# import time
+# import numpy as np
+# from multiprocessing import Queue, Process, Pipe
+#
+# gi.require_version('Gst', '1.0')
+# from gi.repository import Gst
+
+
+# def get_frame(q):
+#     Gst.init(None)
+#     # pipeline = Gst.parse_launch(
+#     #     "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+#     # udpsrc port = 3221 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, " \
+#     # "encoding-name=(string)H264,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" ! rtph264depay ! decodebin ! autovideosink sync = false
+#     print(r'"\\=')
+#     pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
+#                                 r'clock-rate=(int)90000, encoding-name=(string)H264, '
+#                                 r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
+#                                 r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
+#
+#     # pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3220\" caps=\"application/x-rtp, media=(string)video, "
+#     #                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
+#     #                             "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink")
+#     appsink = pipeline.get_by_name('sink')
+#     # print(q.full())
+#     while True:
+#         time.sleep(0.02)
+#         if q.qsize() > 100:
+#             q.get()
+#         else:
+#             pipeline.set_state(Gst.State.PLAYING)
+#             pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+#             smp = appsink.emit('pull-preroll')
+#             buf = smp.get_buffer()
+#             pipeline.set_state(Gst.State.PAUSED)
+#             data = buf.extract_dup(0, buf.get_size())[:3110400]
+#             frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+#             frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+#             q.put(frame_new)
+#             # q.send(frame_new)
+#
+#
+# # (con1, con2) = Pipe()
+# q = Queue()
+# p = Process(target=get_frame, args=(q,))
+# p.start()
+# # time.sleep(5)
+# # print(q.qsize())
+# # print(q.get())
+# start = time.clock()
+# count = 0
+# while True:
+#     # print(time.clock() - start)
+#     frame = q.get()
+#     # frame = con2.recv()
+#     # time.sleep(0.05)
+#     # print(q.qsize())
+#     if frame is not None:
+#     # if time.clock() - start < 3:
+#         # frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+#         # frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+#         # count += 1
+#         cv2.imshow("Video", frame)
+#
+#         if cv2.waitKey(1) & 0xFF == ord('q'):
+#             p.terminate()
+#             cv2.destroyAllWindows()
+#             break
+#     else:
+#         print('sd%d' % count)
+#         p.terminate()
+#         cv2.destroyAllWindows()
+#         break
+# p.terminate()
+
+# ******************************************** OpenCV ************************************************* #
+
 import gi
 import cv2
 import time
 import numpy as np
-from multiprocessing import Queue, Process, Pipe
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 
 
-def get_frame(q):
-    Gst.init(None)
-    pipeline = Gst.parse_launch(
-        "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
-    appsink = pipeline.get_by_name('sink')
-    # print(q.full())
-    while True:
-        # time.sleep(0.05)
-        # if q.full():
-        #     q.get()
-    # else:
-        pipeline.set_state(Gst.State.PLAYING)
-        pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
-        smp = appsink.emit('pull-preroll')
-        buf = smp.get_buffer()
-        pipeline.set_state(Gst.State.PAUSED)
-        data = buf.extract_dup(0, buf.get_size())[:3110400]
-        frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
-        frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
-        # q.put(frame_new)
-        q.send(frame_new)
+Gst.init(None)
+# pipeline = Gst.parse_launch(
+#     "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+# udpsrc port = 3221 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, " \
+# "encoding-name=(string)H264,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" ! rtph264depay ! decodebin ! autovideosink sync = false
 
+pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
+                            r'clock-rate=(int)90000, encoding-name=(string)H264, '
+                            r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
+                            r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
 
-(con1, con2) = Pipe()
-q = Queue(120)
-p = Process(target=get_frame, args=(con1,))
-p.start()
-# time.sleep(5)
-# print(q.qsize())
-# print(q.get())
-start = time.clock()
-count = 0
+# pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3220\" caps=\"application/x-rtp, media=(string)video, "
+#                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
+#                             "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink")
+appsink = pipeline.get_by_name('sink')
+
 while True:
-    # print(time.clock() - start)
-    # frame = q.get()
-    frame = con2.recv()
-    time.sleep(0.05)
-    # print(q.qsize())
+    buf = None
+    pipeline.set_state(Gst.State.PLAYING)
+    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+    smp = appsink.emit('pull-preroll')
+    buf = smp.get_buffer()
+    pipeline.set_state(Gst.State.PAUSED)
+    data = buf.extract_dup(0, buf.get_size())[:3110400]
+    frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
+    frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+
     if frame is not None:
-    # if time.clock() - start < 3:
-        # frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
-        # frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
-        # count += 1
-        cv2.imshow("Video", frame)
+        cv2.imshow("Video", frame_new)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            p.terminate()
             cv2.destroyAllWindows()
             break
-    else:
-        print('sd%d' % count)
-        p.terminate()
-        cv2.destroyAllWindows()
-        break
-p.terminate()
+
+
 
 # Gst.init(None)
-
-# Build the pipeline
+#
+# #Build the pipeline
 # pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3224\" caps=\"application/x-rtp, media=(string)video, "
 #                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
 #                             "payload=(int)96\" ! rtph265depay ! decodebin ! video/x-raw, format=RGB ! videoconvert ! appsink name=sink")
-
+#
 # pipeline = Gst.parse_launch("filesrc location=/home/ubuntu/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
-
+#
 # appsink = pipeline.get_by_name('sink')
 # appsink.set_property("max-buffers", 1)
 # appsink.set_property('emit-signals', True)
@@ -500,7 +558,7 @@ p.terminate()
 #
 # videoconvert = pipeline.get_by_name('convert')
 # videoconvert.set_property('format', 'RGBA')
-
+#
 # while True:
 #     pipeline.set_state(Gst.State.PLAYING)
 #     pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
