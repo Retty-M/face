@@ -102,7 +102,7 @@ class Recognition:
             return face
 
     def identify(self, image):
-        boundary = Boundary()
+        # boundary = Boundary()
         faces_T = []
         faces_F = []
         faces = self.detect.find_faces(image)
@@ -112,13 +112,12 @@ class Recognition:
                 cv2.imshow("Face: " + str(i), face.image)
             face.embedding = self.encoder.generate_embedding(face)
             result = boundary.detect(face)
-            if result > 0:
+            # if result > 0:
                     # faces_T.append(face)
-                face.name, face.score = self.identifier.identify(face)
-                if face.score >= 0.42:
-                    faces_T.append(face)
-            else:
-            # elif face.score <= 0.38:
+            face.name, face.score = self.identifier.identify(face)
+            if face.score >= 0.42:
+                faces_T.append(face)
+            elif face.score <= 0.38:
                 faces_F.append(face)
 
         return faces_T, faces_F
