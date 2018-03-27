@@ -32,6 +32,7 @@ import gi
 import cv2
 import face
 import object
+from database import DB
 
 import numpy as np
 from multiprocessing import Queue, Process
@@ -41,7 +42,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 
 
-def add_overlays(frame, faces_T, faces_F, frame_rate):
+def add_overlays(frame, db, faces_T, faces_F):
     if faces_T is not None or faces_F is not None:
 
         cv2_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -53,17 +54,13 @@ def add_overlays(frame, faces_T, faces_F, frame_rate):
             face_bb = face.bounding_box.astype(int)
 
             draw.rectangle((face_bb[0], face_bb[1], face_bb[2], face_bb[3]), outline=(0, 255, 0))
-
-            # cv2.rectangle(frame,
-            #               (face_bb[0], face_bb[1]), (face_bb[2], face_bb[3]),
-            #               (0, 255, 0), 2)
             if face.name is not None:
-                draw.text((face_bb[0], face_bb[3]),
-                          u'%s %d%%' % (unicode(face.name, 'utf-8'), face.score*100),
-                          (0, 255, 0), font=font)
-                # cv2.putText(frame, '%s %d%%' % (face.name, face.score*100), (face_bb[0], face_bb[3]),
-                #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
-                #             thickness=2, lineType=2)
+                info = db.fetchone(face.name)
+                if info is not None:
+                    str = u'%s %d%%\n%d\n%s\n%s\n%s' % (info[0], face.score*100, info[1], info[2], info[3], info[4])
+                else:
+                    str = u'%s %d%%' % (unicode(face.name, 'utf-8'), face.score*100)
+                draw.text((face_bb[2]+2, face_bb[1]), str, (0, 255, 0), font=font)
 
         for face in faces_F:
             face_bb = face.bounding_box.astype(int)
@@ -72,10 +69,6 @@ def add_overlays(frame, faces_T, faces_F, frame_rate):
             draw.text((face_bb[0], face_bb[3]), u'未授权', (255, 0, 0), font=font)
 
         return cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
-
-    # cv2.putText(frame, str(frame_rate) + " fps", (10, 30),
-    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
-    #             thickness=2, lineType=2)
 
 
 def get_frame(q, source):
@@ -111,6 +104,8 @@ def main(args):
     fps_display_interval = 5  # seconds
     frame_rate = 0
     frame_count = 0
+
+    db = DB('./data/info')
 
     if args.debug:
         print("Debug enabled")
@@ -175,7 +170,7 @@ def main(args):
             #     start_time = time.time()
             #     frame_count = 0
         # print(len(faces_T), len(faces_F))
-        frame_tmp = add_overlays(frame, faces_T, faces_F, frame_rate)
+        frame_tmp = add_overlays(frame, db, faces_T, faces_F)
         if frame_tmp is not None:
             frame = frame_tmp
 
@@ -205,7 +200,7 @@ def parse_arguments(argv):
     parser.add_argument('--face', action='store_true', help='Enable detect faces.')
     parser.add_argument('--track', action='store_true', help='Enable visual tracker.')
     parser.add_argument('-r', '--remote', action='store_true', help='Get video from remote server')
-    parser.add_argument('-s', '--source', type=str, default='/dev/video1', help='The video source, default: /dev/video1')
+    parser.add_argument('-s', '--source', type=str, default='/dev/video0', help='The video source, default: /dev/video1')
     return parser.parse_args(argv)
 
 

@@ -45,7 +45,7 @@ from sklearn.externals import joblib
 gpu_memory_fraction = 0.65
 facenet_model_checkpoint = "./models/20170512-110547"
 boundary_model = "boundary.model"
-classifier_model = "1208.pkl"
+classifier_model = "0308.pkl"
 debug = False
 
 
@@ -111,7 +111,7 @@ class Recognition:
             if debug:
                 cv2.imshow("Face: " + str(i), face.image)
             face.embedding = self.encoder.generate_embedding(face)
-            result = boundary.detect(face)
+            # result = boundary.detect(face)
             # if result > 0:
                     # faces_T.append(face)
             face.name, face.score = self.identifier.identify(face)

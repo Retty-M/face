@@ -114,7 +114,7 @@ def train(data_dir, classifier_filename):
     # print(train_y.shape)
 
     print '------- Training Classifier -------'
-    model = SVC(kernel='linear', probability=True, verbose=False)
+    model = SVC(kernel='linear', probability=True)
     model.fit(train_x, train_y)
 
     with open(classifier_filename, 'wb') as outfile:
