@@ -105,7 +105,7 @@ def main(args):
     frame_rate = 0
     frame_count = 0
 
-    db = DB('./data/info')
+    db = DB('./data/info.db')
 
     if args.debug:
         print("Debug enabled")

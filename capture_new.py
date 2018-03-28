@@ -37,11 +37,12 @@ def capture(device_num, face_capture):
 
     db.add_data(user)
     name = user['name']
+    print(name)
     person_dir = pjoin('./train_data', name)
     if os.path.exists(person_dir):
-        os.removedirs(person_dir)
+        os.system('rm -rf %s' % person_dir)
     else:
-        os.makedirs(person_dir)
+        os.system('mkdir %s' % person_dir)
 
     video_capture = cv2.VideoCapture(device_num)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -67,7 +68,7 @@ def capture(device_num, face_capture):
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            os.system('rm -rf ./train_data/%s' % name)
+            os.system('rm -rf %s' % person_dir)
             break
 
         if image_count == 100:
@@ -75,7 +76,7 @@ def capture(device_num, face_capture):
 
     # encoder = np.array(encoder).reshape(-1, 128)
     # print(encoder.shape)
-    np.save('./train_data/%s/encoder.npy' % name, encoder)
+    np.save('%s/encoder.npy' % person_dir, encoder)
 
     # When everything is done, release the capture
     video_capture.release()
@@ -160,6 +161,7 @@ def train(data_dir, classifier_filename):
 def main(args):
     if args.encode or args.capture:
     # if args.train is False:
+    #     face_capture = None
         face_capture = Face.Capture()
         if args.encode:
             encoder('./train_data', face_capture)
@@ -181,7 +183,7 @@ def parse_arguments(argv):
 
 
 if __name__ == '__main__':
-    # main(parse_arguments(sys.argv[1:]))
-    db = DB('./data/info.db')
-    user = info_capture()
-    db.add_data(user)
+    main(parse_arguments(sys.argv[1:]))
+    # db = DB('./data/info.db')
+    # user = info_capture()
+    # db.add_data(user)
