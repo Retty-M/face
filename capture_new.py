@@ -4,10 +4,12 @@ import cv2
 import sys
 import pickle
 import argparse
+import collections
 import numpy as np
 import face as Face
 from os.path import join as pjoin
 
+from database import DB
 from sklearn.svm import SVC
 
 
@@ -30,8 +32,16 @@ def capture(device_num, face_capture):
     image_count = 0
     encoder = []
 
-    name = raw_input('Enter Your Name: ')
-    os.system('mkdir ./train_data/%s' % name)
+    db = DB('./data/info.db')
+    user = info_capture()
+
+    db.add_data(user)
+    name = user['name']
+    person_dir = pjoin('./train_data', name)
+    if os.path.exists(person_dir):
+        os.removedirs(person_dir)
+    else:
+        os.makedirs(person_dir)
 
     video_capture = cv2.VideoCapture(device_num)
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -70,6 +80,31 @@ def capture(device_num, face_capture):
     # When everything is done, release the capture
     video_capture.release()
     cv2.destroyAllWindows()
+
+
+def info_capture():
+    print('**********************************************************************************')
+    user = collections.defaultdict(str)
+    name = raw_input('姓名:')
+    user['name'] = name
+    age = raw_input('年龄:')
+    while not age.isdigit() or int(age) not in range(1, 100):
+        age = raw_input('输入有误，请正确输入数字1~99:')
+    user['age'] = int(age)
+    duty = raw_input('职务:')
+    user['duty'] = duty
+    department_array = ('综合管理办', '研发中心', '工艺中心', '测试中心', '装联中心')
+    department = raw_input('部门(1=综合管理办 2=研发中心 3=工艺中心 4=测试中心 5=装联中心):')
+    while not department.isdigit() or int(department) not in range(1, 6):
+        department = raw_input('输入有误，请正确输入数字1~5:')
+    user['department'] = department_array[int(department) - 1]
+    secret_array = ('绝密', '机密', '秘密')
+    secret = raw_input('密级(1=绝密 2=机密 3=秘密):')
+    while not secret.isdigit() or int(secret) not in range(1, 4):
+        secret = raw_input('输入有误，请正确输入数字1~3:')
+    user['secret'] = secret_array[int(secret) - 1]
+    print('**********************************************************************************')
+    return user
 
 
 def encoder(data_dir, face_capture):
@@ -146,4 +181,7 @@ def parse_arguments(argv):
 
 
 if __name__ == '__main__':
-    main(parse_arguments(sys.argv[1:]))
+    # main(parse_arguments(sys.argv[1:]))
+    db = DB('./data/info.db')
+    user = info_capture()
+    db.add_data(user)
