@@ -507,28 +507,35 @@ from gi.repository import Gst
 
 
 Gst.init(None)
-# pipeline = Gst.parse_launch(
-#     "filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+# pipeline = Gst.parse_launch("filesrc location=/home/id/TownCentreXVID.avi ! avidemux ! decodebin ! appsink name=sink")
+
 # udpsrc port = 3221 caps = "application/x-rtp, media=(string)video, clock-rate=(int)90000, " \
 # "encoding-name=(string)H264,sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", payload=(int)96" ! rtph264depay ! decodebin ! autovideosink sync = false
 
-pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
-                            r'clock-rate=(int)90000, encoding-name=(string)H264, '
-                            r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
-                            r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
+# pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
+#                             r'clock-rate=(int)90000, encoding-name=(string)H264, '
+#                             r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
+#                             r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
 
-# pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.120:3220\" caps=\"application/x-rtp, media=(string)video, "
-#                             "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
-#                             "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink")
+pipeline = Gst.parse_launch("udpsrc uri=\"udp://192.168.1.109:3220\" caps=\"application/x-rtp, media=(string)video, "
+                            "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, "
+                            "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink")
+
 appsink = pipeline.get_by_name('sink')
+appsink.set_property('emit-signals', True)
+appsink.set_property('drop', True)
+appsink.set_property('max-buffers', 1)
+
+pipeline.set_state(Gst.State.PLAYING)
+# smp = appsink.emit('pull-sample')
 
 while True:
-    buf = None
-    pipeline.set_state(Gst.State.PLAYING)
-    pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
-    smp = appsink.emit('pull-preroll')
+
+    # pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+    time.sleep(0.1)
+    smp = appsink.emit('pull-sample')
     buf = smp.get_buffer()
-    pipeline.set_state(Gst.State.PAUSED)
+    # pipeline.set_state(Gst.State.PAUSED)
     data = buf.extract_dup(0, buf.get_size())[:3110400]
     frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
     frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)

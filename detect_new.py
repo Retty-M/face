@@ -73,26 +73,31 @@ def add_overlays(frame, db, faces_T, faces_F):
 
 def get_frame(q, source):
     Gst.init(None)
-    # command = "udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
-    #           "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
-    #           "payload=(int)96\" ! rtph265depay !  decodebin ! appsink name=sink" % source
-    # pipeline = Gst.parse_launch(command)
-    pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
-                                r'clock-rate=(int)90000, encoding-name=(string)H264, '
-                                r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
-                                r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
+    command = "udpsrc uri=\"udp://%s\" caps=\"application/x-rtp, media=(string)video, " \
+              "clock-rate=(int)90000, encoding-name=(string)H265, sprop-parameter-sets=(string)1, " \
+              "payload=(int)96\" ! rtph265depay !  decodebin ! appsink name=sink" % source
+    pipeline = Gst.parse_launch(command)
+    # pipeline = Gst.parse_launch(r'udpsrc port=3221 caps="application/x-rtp, media=(string)video, '
+    #                             r'clock-rate=(int)90000, encoding-name=(string)H264, '
+    #                             r'sprop-parameter-sets=(string)\"Z0JAMpWgHgCJ+VA\\=\\,aM48gA\\=\\=\", '
+    #                             r'payload=(int)96\" ! rtph264depay ! decodebin ! appsink name=sink')
     appsink = pipeline.get_by_name('sink')
+    appsink.set_property('emit-signals', True)
+    appsink.set_property('drop', True)
+    appsink.set_property('max-buffers', 1)
+
+    pipeline.set_state(Gst.State.PLAYING)
 
     while True:
-        time.sleep(0.05)
+        # time.sleep(0.05)
         if q.qsize() > 3:
             q.get()
         else:
-            pipeline.set_state(Gst.State.PLAYING)
-            pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
-            smp = appsink.emit('pull-preroll')
-            buf = smp.get_buffer()
-            pipeline.set_state(Gst.State.PAUSED)
+            # pipeline.set_state(Gst.State.PLAYING)
+            # pipeline.seek_simple(Gst.Format.BUFFERS, Gst.SeekFlags.FLUSH, 1)
+            sample = appsink.emit('pull-sample')
+            buf = sample.get_buffer()
+            # pipeline.set_state(Gst.State.PAUSED)
             data = buf.extract_dup(0, buf.get_size())[:3110400]
             frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
             frame_new = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
@@ -132,6 +137,10 @@ def main(args):
         #           "payload=(int)96\" ! rtph265depay ! decodebin ! appsink name=sink" % args.source
         # pipeline = Gst.parse_launch(command)
         # appsink = pipeline.get_by_name('sink')
+        # appsink.set_property('emit-signals', True)
+        # appsink.set_property('drop', True)
+        # appsink.set_property('max-buffers', 1)
+        #
         # pipeline.set_state(Gst.State.PLAYING)
         q = Queue()
         p = Process(target=get_frame, args=(q, args.source,))
@@ -150,7 +159,10 @@ def main(args):
             frame = q.get()
             # cv2.imwrite('./audio/i.jpg', frame)
             # raw_image = pipe.stdout.read(3110400)
-            # frame = np.fromstring(raw_image, dtype='uint8').reshape((1620, 1920))
+            # smp = appsink.emit('pull-sample')
+            # buf = smp.get_buffer()
+            # data = buf.extract_dup(0, buf.get_size())[:3110400]
+            # frame = np.fromstring(data, dtype='uint8').reshape((1620, 1920))
             # frame = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
         else:
             ret, frame = video_capture.read()
@@ -188,8 +200,9 @@ def main(args):
     # When everything is done, release the capture
     if args.remote:
         p.terminate()
-    video_capture.release()
-    cv2.destroyAllWindows()
+    else:
+        video_capture.release()
+        cv2.destroyAllWindows()
 
 
 def parse_arguments(argv):
