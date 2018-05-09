@@ -82,7 +82,7 @@ def main(args):
         else:
             print('ERROR: cannot find {}\'s encoder file'.format(guy))
 
-    train_x = np.array(train_x).reshape(-1, 128)
+    train_x = np.array(train_x).reshape(-1, 512)
     train_y = np.array(train_y)
     print(train_x.shape)
     print(train_y.shape)

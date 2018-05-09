@@ -39,12 +39,13 @@ from scipy import misc
 import detect_face
 import facenet
 
+from os.path import join as pjoin
 from sklearn.externals import joblib
 
 
 gpu_memory_fraction = 0.65
-facenet_model_checkpoint = "./models/20170512-110547"
-boundary_model = "boundary.model"
+facenet_model_checkpoint = "./models/20180402-114759"
+boundary_model = "cla.pkl"
 classifier_model = "0308.pkl"
 debug = False
 
@@ -102,7 +103,7 @@ class Recognition:
             return face
 
     def identify(self, image):
-        # boundary = Boundary()
+        boundary = Boundary()
         faces_T = []
         faces_F = []
         faces = self.detect.find_faces(image)
@@ -113,11 +114,21 @@ class Recognition:
             face.embedding = self.encoder.generate_embedding(face)
             # result = boundary.detect(face)
             # if result > 0:
-                    # faces_T.append(face)
+            #     print('haha')
+            #     face.name, face.score = self.identifier.identify(face)
+            #     faces_T.append(face)
+            # else:
+            #     faces_F.append(face)
             face.name, face.score = self.identifier.identify(face)
-            if face.score >= 0.2:
-                faces_T.append(face)
-            elif face.score <= 0.2:
+            file = pjoin(pjoin('./train_data', face.name), 'cls.pkl')
+            model = joblib.load(file)
+            result = model.predict([face.embedding])[0]
+            if result > 0:
+                if face.score >= 0.6:
+                    faces_T.append(face)
+                elif face.score <= 0.59:
+                    faces_F.append(face)
+            else:
                 faces_F.append(face)
 
         return faces_T, faces_F
