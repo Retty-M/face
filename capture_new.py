@@ -11,6 +11,8 @@ from os.path import join as pjoin
 
 from database import DB
 from sklearn.svm import SVC
+from sklearn.externals import joblib
+from sklearn.ensemble import IsolationForest
 
 
 def add_overlays(frame, face, image_rate):
@@ -52,7 +54,7 @@ def capture(device_num, face_capture):
         # Capture frame-by-frame
         face = None
         ret, frame = video_capture.read()
-        if frame_count > 20:
+        if frame_count > 10:
             if (frame_count % frame_interval) == 0:
                 face = face_capture.capture_encode(frame)
                 if face is not None:
@@ -76,6 +78,7 @@ def capture(device_num, face_capture):
     # encoder = np.array(encoder).reshape(-1, 128)
     # print(encoder.shape)
     np.save('./train_data/%s/encoder.npy' % name, encoder)
+    train_boundary('./train_data', 'cls.pkl')
 
     # When everything is done, release the capture
     video_capture.release()
@@ -112,8 +115,11 @@ def encoder(data_dir, face_capture):
         encode = []
         person_dir = pjoin(data_dir, guy)
         encoder_file = pjoin(person_dir, 'encoder.npy')
+        boundary_file = pjoin(person_dir, 'cls.pkl')
         if os.path.exists(encoder_file):
             os.system('rm %s' % encoder_file)
+        if os.path.exists(boundary_file):
+            os.system('rm %s' % boundary_file)
         for image in os.listdir(person_dir):
             person_img = pjoin(person_dir, image)
             frame = cv2.imread(person_img)
@@ -121,7 +127,58 @@ def encoder(data_dir, face_capture):
             face = face_capture.capture_encode(frame)
             if face is not None:
                 encode.append(face.embedding)
+        print(encoder_file)
         np.save(encoder_file, encode)
+        train_boundary(data_dir, 'cls.pkl')
+
+
+def train_boundary(data_dir, boundary_filename):
+    for guy in os.listdir(data_dir):
+        person_dir = pjoin(data_dir, guy)
+        encoder_file = pjoin(person_dir, 'encoder.npy')
+        boundary_file = pjoin(person_dir, boundary_filename)
+        if os.path.exists(encoder_file) is False:
+            if os.path.exists(encoder_file):
+                train_x = np.load(encoder_file)
+                print('INFO: {}\'s encoder file is loaded'.format(guy))
+                train_x = np.array(train_x).reshape(-1, 512)
+
+                print '------- Training Boundary -------'
+                model = IsolationForest()
+                model.fit(train_x)
+                joblib.dump(model, boundary_file)
+                print 'Saved boundary model to file "%s"' % boundary_file
+            else:
+                print('ERROR: cannot find {}\'s encoder file'.format(guy))
+
+
+# def cla(data_dir, classifier_filename):
+#     keys = []
+#     train_x = []
+#     train_y = []
+#     for guy in os.listdir(data_dir):
+#         person_dir = pjoin(data_dir, guy)
+#         encoder_file = pjoin(person_dir, 'encoder.npy')
+#         if os.path.exists(encoder_file):
+#             keys.append(guy)
+#             encoder = np.load(encoder_file)
+#             if len(train_x) == 0:
+#                 train_x = encoder
+#             else:
+#                 train_x = np.append(train_x, encoder, axis=0)
+#             for i in range(0, encoder.shape[0]):
+#                 train_y.append(keys.index(guy))
+#             print('INFO: {}\'s encoder file is loaded'.format(guy))
+#         else:
+#             print('ERROR: cannot find {}\'s encoder file'.format(guy))
+#     train_x = np.array(train_x).reshape(-1, 512)
+#     print(train_x.shape)
+#
+#     print '------- Training Classifier -------'
+#     model = IsolationForest()
+#     model.fit(train_x)
+#     joblib.dump(model, classifier_filename)
+#     print 'Saved classifier model to file "%s"' % classifier_filename
 
 
 def train(data_dir, classifier_filename):
@@ -143,7 +200,7 @@ def train(data_dir, classifier_filename):
             print('INFO: {}\'s encoder file is loaded'.format(guy))
         else:
             print('ERROR: cannot find {}\'s encoder file'.format(guy))
-    train_x = np.array(train_x).reshape(-1, 128)
+    train_x = np.array(train_x).reshape(-1, 512)
     train_y = np.array(train_y)
     # print(train_x.shape)
     # print(train_y.shape)
@@ -181,7 +238,9 @@ def parse_arguments(argv):
 
 
 if __name__ == '__main__':
-    # main(parse_arguments(sys.argv[1:]))
-    db = DB('./data/info.db')
-    user = info_capture()
-    db.add_data(user)
+    main(parse_arguments(sys.argv[1:]))
+    # db = DB('./data/info.db')
+    # user = info_capture()
+    # db.add_data(user)
+    # cls('./train_data', 'cls.pkl')
+    # cla('./train_data', 'cla.pkl')
