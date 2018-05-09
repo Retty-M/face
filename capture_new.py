@@ -78,7 +78,7 @@ def capture(device_num, face_capture):
     # encoder = np.array(encoder).reshape(-1, 128)
     # print(encoder.shape)
     np.save('./train_data/%s/encoder.npy' % name, encoder)
-    train_boundary('./train_data', 'cls.pkl')
+    train_boundary(encoder, './train_data/%s' % name, 'cls.pkl')
 
     # When everything is done, release the capture
     video_capture.release()
@@ -110,9 +110,9 @@ def info_capture():
     return user
 
 
-def encoder(data_dir, face_capture):
+def encode(data_dir, face_capture):
     for guy in os.listdir(data_dir):
-        encode = []
+        encoder = []
         person_dir = pjoin(data_dir, guy)
         encoder_file = pjoin(person_dir, 'encoder.npy')
         boundary_file = pjoin(person_dir, 'cls.pkl')
@@ -126,30 +126,21 @@ def encoder(data_dir, face_capture):
             # cv2.imshow('image', frame)
             face = face_capture.capture_encode(frame)
             if face is not None:
-                encode.append(face.embedding)
-        print(encoder_file)
-        np.save(encoder_file, encode)
-        train_boundary(data_dir, 'cls.pkl')
+                encoder.append(face.embedding)
+        print('INFO: {}\'s encoder file is generated'.format(guy))
+        np.save(encoder_file, encoder)
+        train_boundary(encoder, person_dir, 'cls.pkl')
 
 
-def train_boundary(data_dir, boundary_filename):
-    for guy in os.listdir(data_dir):
-        person_dir = pjoin(data_dir, guy)
-        encoder_file = pjoin(person_dir, 'encoder.npy')
+def train_boundary(encoder, person_dir, boundary_filename):
         boundary_file = pjoin(person_dir, boundary_filename)
-        if os.path.exists(encoder_file) is False:
-            if os.path.exists(encoder_file):
-                train_x = np.load(encoder_file)
-                print('INFO: {}\'s encoder file is loaded'.format(guy))
-                train_x = np.array(train_x).reshape(-1, 512)
+        train_x = np.array(encoder).reshape(-1, 512)
 
-                print '------- Training Boundary -------'
-                model = IsolationForest()
-                model.fit(train_x)
-                joblib.dump(model, boundary_file)
-                print 'Saved boundary model to file "%s"' % boundary_file
-            else:
-                print('ERROR: cannot find {}\'s encoder file'.format(guy))
+        print '    ------- Training Boundary -------'
+        model = IsolationForest()
+        model.fit(train_x)
+        joblib.dump(model, boundary_file)
+        print '    Saved boundary model to file "%s"' % boundary_file
 
 
 # def cla(data_dir, classifier_filename):
@@ -219,12 +210,14 @@ def main(args):
     # if args.train is False:
         face_capture = Face.Capture()
         if args.encode:
-            encoder('./train_data', face_capture)
+            encode('./train_data', face_capture)
         if args.capture:
             while True:
                 capture(0, face_capture)
-                key = raw_input('继续（任意键）退出（N）:')
-                if str(key).upper() == 'N':
+                key = raw_input('继续（Y）退出（任意键）:')
+                if str(key).upper() == 'Y':
+                    pass
+                else:
                     break
     train('./train_data', '0308.pkl')
 

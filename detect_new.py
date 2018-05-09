@@ -187,8 +187,8 @@ def main(args):
             frame = frame_tmp
 
         # frame_count += 1
-        # cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-        # cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

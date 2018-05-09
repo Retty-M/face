@@ -43,9 +43,9 @@ from os.path import join as pjoin
 from sklearn.externals import joblib
 
 
-gpu_memory_fraction = 0.65
+gpu_memory_fraction = 0.75
 facenet_model_checkpoint = "./models/20180402-114759"
-boundary_model = "cla.pkl"
+boundary_model = "cls.pkl"
 classifier_model = "0308.pkl"
 debug = False
 
@@ -103,7 +103,7 @@ class Recognition:
             return face
 
     def identify(self, image):
-        boundary = Boundary()
+        # boundary = Boundary()
         faces_T = []
         faces_F = []
         faces = self.detect.find_faces(image)
