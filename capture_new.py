@@ -11,6 +11,8 @@ from os.path import join as pjoin
 
 from database import DB
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 from sklearn.ensemble import IsolationForest
 
@@ -25,6 +27,46 @@ def add_overlays(frame, face, image_rate):
     cv2.putText(frame, str(image_rate) + "%", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255),
                 thickness=2, lineType=2)
+
+
+def capture_test(device_num, face_capture):
+    # Number of frames after which to run face detection
+    frame_interval = 2
+    frame_count = 0
+    image_count = 0
+    encoder = []
+
+    video_capture = cv2.VideoCapture(device_num)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+
+    while True:
+        # Capture frame-by-frame
+        face = None
+        ret, frame = video_capture.read()
+        if frame_count > 6:
+            if (frame_count % frame_interval) == 0:
+                face = face_capture.capture_encode(frame)
+                if face is not None:
+                    image_count += 1
+                    encoder.append(face.embedding)
+        add_overlays(frame, face, image_count)
+
+        frame_count += 1
+        cv2.imshow('Video', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        if image_count == 10:
+            break
+
+    encoder = np.mean(encoder, axis=0).reshape(-1, 512)
+    np.save('./train_data/%s/encoder.npy' % '王艺谋', encoder)
+
+    # When everything is done, release the capture
+    video_capture.release()
+    cv2.destroyAllWindows()
 
 
 def capture(device_num, face_capture):
@@ -54,7 +96,7 @@ def capture(device_num, face_capture):
         # Capture frame-by-frame
         face = None
         ret, frame = video_capture.read()
-        if frame_count > 10:
+        if frame_count > 6:
             if (frame_count % frame_interval) == 0:
                 face = face_capture.capture_encode(frame)
                 if face is not None:
@@ -98,14 +140,20 @@ def info_capture():
     user['duty'] = duty
     department_array = ('综合管理办', '研发中心', '工艺中心', '测试中心', '装联中心')
     department = raw_input('部门(1=综合管理办 2=研发中心 3=工艺中心 4=测试中心 5=装联中心):')
-    while not department.isdigit() or int(department) not in range(1, 6):
-        department = raw_input('输入有误，请正确输入数字1~5:')
-    user['department'] = department_array[int(department) - 1]
+    if department != '':
+        while not department.isdigit() or int(department) not in range(1, 6):
+            department = raw_input('输入有误，请正确输入数字1~5:')
+        user['department'] = department_array[int(department) - 1]
+    else:
+        user['department'] = department
     secret_array = ('绝密', '机密', '秘密')
     secret = raw_input('密级(1=绝密 2=机密 3=秘密):')
-    while not secret.isdigit() or int(secret) not in range(1, 4):
-        secret = raw_input('输入有误，请正确输入数字1~3:')
-    user['secret'] = secret_array[int(secret) - 1]
+    if secret != '':
+        while not secret.isdigit() or int(secret) not in range(1, 4):
+            secret = raw_input('输入有误，请正确输入数字1~3:')
+        user['secret'] = secret_array[int(secret) - 1]
+    else:
+        user['secret'] = secret
     print('**********************************************************************************')
     return user
 
@@ -128,8 +176,9 @@ def encode(data_dir, face_capture):
             if face is not None:
                 encoder.append(face.embedding)
         print('INFO: {}\'s encoder file is generated'.format(guy))
+        # encoder = np.mean(encoder, axis=0).reshape(-1, 512)
         np.save(encoder_file, encoder)
-        train_boundary(encoder, person_dir, 'cls.pkl')
+        # train_boundary(encoder, person_dir, 'cls.pkl')
 
 
 def train_boundary(encoder, person_dir, boundary_filename):
@@ -188,21 +237,39 @@ def train(data_dir, classifier_filename):
                 train_x = np.append(train_x, encoder, axis=0)
             for i in range(0, encoder.shape[0]):
                 train_y.append(keys.index(guy))
+            print(guy, train_y, keys)
             print('INFO: {}\'s encoder file is loaded'.format(guy))
         else:
             print('ERROR: cannot find {}\'s encoder file'.format(guy))
     train_x = np.array(train_x).reshape(-1, 512)
     train_y = np.array(train_y)
+
     # print(train_x.shape)
     # print(train_y.shape)
+    print(len(keys))
+    # print '------- Training KNN Classifier -------'
+    # model = KNeighborsClassifier(n_neighbors=len(keys))
+    # model.fit(train_x, train_y)
+    #
+    # with open(classifier_filename, 'wb') as outfile:
+    #     pickle.dump((model, keys), outfile)
+    # print 'Saved classifier model to file "%s"' % classifier_filename
 
-    print '------- Training Classifier -------'
+    print '------- Training SVM Classifier -------'
     model = SVC(kernel='linear', probability=True)
     model.fit(train_x, train_y)
 
     with open(classifier_filename, 'wb') as outfile:
         pickle.dump((model, keys), outfile)
     print 'Saved classifier model to file "%s"' % classifier_filename
+
+    # print '------- Training RF Classifier -------'
+    # model = RandomForestClassifier()
+    # model.fit(train_x, train_y)
+    #
+    # with open(classifier_filename, 'wb') as outfile:
+    #     pickle.dump((model, keys), outfile)
+    # print 'Saved classifier model to file "%s"' % classifier_filename
 
 
 def main(args):
@@ -213,7 +280,8 @@ def main(args):
             encode('./train_data', face_capture)
         if args.capture:
             while True:
-                capture(0, face_capture)
+                # capture(0, face_capture)
+                capture_test(0, face_capture)
                 key = raw_input('继续（Y）退出（任意键）:')
                 if str(key).upper() == 'Y':
                     pass

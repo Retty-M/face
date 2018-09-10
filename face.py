@@ -127,9 +127,9 @@ class Recognition:
             # model = joblib.load(file)
             # result = model.predict([face.embedding])[0]
             # if result > 0:
-            if face.score >= 0.175:
+            if face.score >= 0.75:
                 faces_T.append(face)
-            elif face.score <= 0.174:
+            elif face.score <= 0.74:
                 faces_F.append(face)
             # else:
             #     faces_F.append(face)
@@ -145,7 +145,7 @@ class Identifier:
     def identify(self, face):
         if face.embedding is not None:
             predictions = self.model.predict_proba([face.embedding])
-            print(predictions)
+            # print(predictions)
             best_class_indices = np.argmax(predictions, axis=1)
             return self.class_names[best_class_indices[0]], predictions[0][best_class_indices[0]]
 
