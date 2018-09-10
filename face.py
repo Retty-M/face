@@ -42,9 +42,12 @@ import facenet
 from os.path import join as pjoin
 from sklearn.externals import joblib
 
+# 1:FaceNet 2:InsightFace
+face_model = 1
 
 gpu_memory_fraction = 0.75
 facenet_model_checkpoint = "./models/20180402-114759"
+insightFace_model_checkpoint = "./models/insight_face"
 boundary_model = "cls.pkl"
 classifier_model = "0308.pkl"
 debug = False
@@ -120,29 +123,29 @@ class Recognition:
             # else:
             #     faces_F.append(face)
             face.name, face.score = self.identifier.identify(face)
-            file = pjoin(pjoin('./train_data', face.name), 'cls.pkl')
-            model = joblib.load(file)
-            result = model.predict([face.embedding])[0]
-            if result > 0:
-                if face.score >= 0.6:
-                    faces_T.append(face)
-                elif face.score <= 0.59:
-                    faces_F.append(face)
-            else:
+            # file = pjoin(pjoin('./train_data', face.name), 'cls.pkl')
+            # model = joblib.load(file)
+            # result = model.predict([face.embedding])[0]
+            # if result > 0:
+            if face.score >= 0.175:
+                faces_T.append(face)
+            elif face.score <= 0.174:
                 faces_F.append(face)
+            # else:
+            #     faces_F.append(face)
 
         return faces_T, faces_F
 
 
 class Identifier:
     def __init__(self):
-        pass
-
-    def identify(self, face):
         with open(classifier_model, 'rb') as infile:
             self.model, self.class_names = pickle.load(infile)
+
+    def identify(self, face):
         if face.embedding is not None:
             predictions = self.model.predict_proba([face.embedding])
+            print(predictions)
             best_class_indices = np.argmax(predictions, axis=1)
             return self.class_names[best_class_indices[0]], predictions[0][best_class_indices[0]]
 
@@ -151,19 +154,31 @@ class Encoder:
     def __init__(self):
         self.sess = tf.Session()
         with self.sess.as_default():
-            facenet.load_model(facenet_model_checkpoint)
+            if face_model == 1:
+                facenet.load_model(facenet_model_checkpoint)
+            elif face_model == 2:
+                saver = tf.train.import_meta_graph(pjoin(insightFace_model_checkpoint, 'model.ckpt.meta'))
+                saver.restore(self.sess, pjoin(insightFace_model_checkpoint, 'model.ckpt'))
 
     def generate_embedding(self, face):
-        # Get input and output tensors
-        images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
-        embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
-        phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
+        if face_model == 1:
+            # Get input and output tensors
+            images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
+            embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
+            phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
 
-        prewhiten_face = facenet.prewhiten(face.image)
+            prewhiten_face = facenet.prewhiten(face.image)
 
-        # Run forward pass to calculate embeddings
-        feed_dict = {images_placeholder: [prewhiten_face], phase_train_placeholder: False}
-        return self.sess.run(embeddings, feed_dict=feed_dict)[0]
+            # Run forward pass to calculate embeddings
+            feed_dict = {images_placeholder: [prewhiten_face], phase_train_placeholder: False}
+            return self.sess.run(embeddings, feed_dict=feed_dict)[0]
+        elif face_model == 2:
+            images_placeholder = tf.get_default_graph().get_tensor_by_name('img_inputs:0')
+            dropout_rate = tf.get_default_graph().get_tensor_by_name('dropout_rate:0')
+            embeddings = tf.get_default_graph().get_tensor_by_name('resnet_v1_50/E_BN2/Identity:0')
+
+            feed_dict = {images_placeholder: [face.image], dropout_rate: 1}
+            return self.sess.run(embeddings, feed_dict=feed_dict)[0]
 
 
 class Detection:
@@ -172,8 +187,12 @@ class Detection:
     threshold = [0.7, 0.8, 0.8]  # three steps's threshold
     factor = 0.709  # scale factor
 
-    def __init__(self, face_crop_size=160, face_crop_margin=32):
+    def __init__(self, face_crop_size=112, face_crop_margin=32):
         self.pnet, self.rnet, self.onet = self._setup_mtcnn()
+        if face_model == 1:
+            face_crop_size = 160
+        elif face_model == 2:
+            face_crop_size =112
         self.face_crop_size = face_crop_size
         self.face_crop_margin = face_crop_margin
 
