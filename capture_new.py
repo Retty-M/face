@@ -50,6 +50,7 @@ def capture_test(device_num, face_capture):
                 if face is not None:
                     image_count += 1
                     encoder.append(face.embedding)
+                    cv2.imwrite('./train_data/%s/%s_%d.jpg' % ('王艺谋', '王艺谋', image_count), frame)
         add_overlays(frame, face, image_count)
 
         frame_count += 1
@@ -61,8 +62,8 @@ def capture_test(device_num, face_capture):
         if image_count == 10:
             break
 
-    encoder = np.mean(encoder, axis=0).reshape(-1, 512)
-    np.save('./train_data/%s/encoder.npy' % '王艺谋', encoder)
+    # encoder = np.mean(encoder, axis=0).reshape(-1, 512)
+    # np.save('./train_data/%s/encoder.npy' % '王艺谋', encoder)
 
     # When everything is done, release the capture
     video_capture.release()
@@ -176,8 +177,9 @@ def encode(data_dir, face_capture):
             if face is not None:
                 encoder.append(face.embedding)
         print('INFO: {}\'s encoder file is generated'.format(guy))
-        # encoder = np.mean(encoder, axis=0).reshape(-1, 512)
+        encoder_mean = np.mean(encoder, axis=0).reshape(-1, 512)
         np.save(encoder_file, encoder)
+        np.save(pjoin(person_dir, 'mean.npy'), encoder_mean)
         # train_boundary(encoder, person_dir, 'cls.pkl')
 
 
@@ -237,7 +239,6 @@ def train(data_dir, classifier_filename):
                 train_x = np.append(train_x, encoder, axis=0)
             for i in range(0, encoder.shape[0]):
                 train_y.append(keys.index(guy))
-            print(guy, train_y, keys)
             print('INFO: {}\'s encoder file is loaded'.format(guy))
         else:
             print('ERROR: cannot find {}\'s encoder file'.format(guy))

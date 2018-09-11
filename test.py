@@ -640,6 +640,8 @@ import numpy as np
 a = np.array([[1, 2], [3, 4]])
 b = np.mean(a, axis=0)
 b = b.reshape(-1, 2)
+c = np.linalg.norm(a[0]-a[1])
 print(b)
+print(c)
 print(a.shape)
 print(b.shape)
