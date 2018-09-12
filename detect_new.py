@@ -150,7 +150,7 @@ def main(args):
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    encoder0 = np.load('./train_data/侯永隆/mean.npy')
+    encoder0 = np.load('./train_data/王艺谋/mean.npy')
     encoder1 = np.load('./train_data/孙明熙/mean.npy')
 
     while True:
@@ -185,17 +185,18 @@ def main(args):
             #     start_time = time.time()
             #     frame_count = 0
         # print(len(faces_T), len(faces_F))
-        if faces_T is not None:
-            xx0 = np.linalg.norm(faces_T[0].embedding - encoder0)
+        if len(faces_T) != 0:
+            print len(faces_T)
+            xx0 = np.linalg.norm(faces_T[-1].embedding - encoder0)
             xx1 = np.linalg.norm(faces_T[0].embedding - encoder1)
-            print(xx0, xx1).
+            print(xx0, xx1)
         frame_tmp = add_overlays(frame, db, faces_T, faces_F)
         if frame_tmp is not None:
             frame = frame_tmp
 
         # frame_count += 1
-        cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
+        # cv2.setWindowProperty('Video', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('Video', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -43,7 +43,7 @@ from os.path import join as pjoin
 from sklearn.externals import joblib
 
 # 1:FaceNet 2:InsightFace
-face_model = 1
+face_model = 2
 
 gpu_memory_fraction = 0.75
 facenet_model_checkpoint = "./models/20180402-114759"
