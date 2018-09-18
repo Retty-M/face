@@ -164,7 +164,7 @@ def encode(data_dir, face_capture):
         encoder = []
         person_dir = pjoin(data_dir, guy)
         encoder_file = pjoin(person_dir, 'encoder.npy')
-        boundary_file = pjoin(person_dir, 'cls.pkl')
+        boundary_file = pjoin(person_dir, 'mean.npy')
         if os.path.exists(encoder_file):
             os.system('rm %s' % encoder_file)
         if os.path.exists(boundary_file):
