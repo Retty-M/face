@@ -150,7 +150,7 @@ def main(args):
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    encoder0 = np.load('./train_data/王艺谋/mean.npy')
+    encoder0 = np.load('./train_data/卢山/mean.npy')
     encoder1 = np.load('./train_data/孙明熙/mean.npy')
 
     while True:
@@ -186,7 +186,6 @@ def main(args):
             #     frame_count = 0
         # print(len(faces_T), len(faces_F))
         if len(faces_T) != 0:
-            print len(faces_T)
             xx0 = np.linalg.norm(faces_T[-1].embedding - encoder0)
             xx1 = np.linalg.norm(faces_T[0].embedding - encoder1)
             print(xx0, xx1)

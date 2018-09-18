@@ -31,6 +31,7 @@
 
 import pickle
 
+import os
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -43,13 +44,14 @@ from os.path import join as pjoin
 from sklearn.externals import joblib
 
 # 1:FaceNet 2:InsightFace
-face_model = 2
+face_model = 1
 
 gpu_memory_fraction = 0.75
 facenet_model_checkpoint = "./models/20180402-114759"
 insightFace_model_checkpoint = "./models/insight_face"
 boundary_model = "cls.pkl"
 classifier_model = "0308.pkl"
+data_dir = './train_data'
 debug = False
 
 
@@ -83,12 +85,26 @@ class Capture:
 
 class Boundary:
     def __init__(self):
-        self.model = joblib.load(boundary_model)
+        self.points = self.collection()
+        # self.model = joblib.load(boundary_model)
 
     def detect(self, face):
         if face.embedding is not None:
             result = self.model.predict([face.embedding])
             return result[0]
+
+    def collection(self):
+        points = {}
+        for guy in os.listdir(data_dir):
+            person_dir = pjoin(data_dir, guy)
+            mean_file = pjoin(person_dir, 'mean.npy')
+            if os.path.exists(mean_file):
+                mean = np.load(mean_file)
+                points[guy] = mean
+            else:
+                print('ERROR: {}\'s mean file not found'.format(guy))
+                return
+        return points
 
 
 class Recognition:
@@ -96,6 +112,7 @@ class Recognition:
         self.detect = Detection()
         self.encoder = Encoder()
         self.identifier = Identifier()
+        self.boundary = Boundary()
 
     def add_identity(self, image, person_name):
         faces = self.detect.find_faces(image)
@@ -127,12 +144,14 @@ class Recognition:
             # model = joblib.load(file)
             # result = model.predict([face.embedding])[0]
             # if result > 0:
-            if face.score >= 0.05:
-                faces_T.append(face)
-            elif face.score <= 0.01:
+            if face.score >= 0.75:
+                distance = np.linalg.norm(face.embedding - self.boundary.points[face.name])
+                if distance < 0.5:
+                    faces_T.append(face)
+                else:
+                    faces_F.append(face)
+            else:
                 faces_F.append(face)
-            # else:
-            #     faces_F.append(face)
 
         return faces_T, faces_F
 
