@@ -150,9 +150,6 @@ def main(args):
         video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    encoder0 = np.load('./train_data/卢山/mean.npy')
-    encoder1 = np.load('./train_data/孙明熙/mean.npy')
-
     while True:
         # Capture frame-by-frame
         faces_T = None
@@ -185,10 +182,6 @@ def main(args):
             #     start_time = time.time()
             #     frame_count = 0
         # print(len(faces_T), len(faces_F))
-        if len(faces_T) != 0:
-            xx0 = np.linalg.norm(faces_T[-1].embedding - encoder0)
-            xx1 = np.linalg.norm(faces_T[0].embedding - encoder1)
-            print(xx0, xx1)
         frame_tmp = add_overlays(frame, db, faces_T, faces_F)
         if frame_tmp is not None:
             frame = frame_tmp
